@@ -30,7 +30,14 @@ export const redisClient = redis.createClient(REDIS_URI)
 app.use(express.json())
 app.use(multer({ limits: { fileSize: 1024 * 1024 * 10 } }).single('file'))
 app.use(helmet())
-app.use(cors({ origin: CLIENT_URL, credentials: true }))
+app.use(
+  cors({
+    origin: CLIENT_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type'],
+  }),
+)
 
 const mongooseOpts = {
   useNewUrlParser: true,
@@ -65,15 +72,12 @@ redisClient.on('error', ({ message }) => console.error(`Error: ${message}`))
 
 app.use(
   session({
-    cookie: { maxAge: +SESSION_LIFETIME, sameSite: true },
+    cookie: { maxAge: +SESSION_LIFETIME },
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store:
-      NODE_ENV != 'test'
-        ? new RedisStore({ client: redisClient, disableTouch: true })
-        : undefined,
-  })
+    store: NODE_ENV != 'test' ? new RedisStore({ client: redisClient, disableTouch: true }) : undefined,
+  }),
 )
 
 app.use(auth)
