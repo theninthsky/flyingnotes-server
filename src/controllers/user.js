@@ -1,16 +1,59 @@
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
 import User from '../models/User.js'
+import Token from '../models/Token.js'
+
+const {
+  NODE_ENV,
+  ACCESS_TOKEN_SECRET,
+  ACCESS_TOKEN_EXPIRES_IN = 60 * 10,
+  REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3,
+} = process.env
+const SECURE = NODE_ENV == 'production' ? 'Secure' : ''
+
+const generateRefreshToken = async userID => {
+  const date = new Date()
+  date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
+
+  const { _id } = await new Token({ userID, expiresIn: date.toISOString() }).save()
+
+  return _id
+}
+
+export const updateRefreshToken = refreshTokenID => {
+  const date = new Date()
+  date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
+
+  Token.findByIdAndUpdate(refreshTokenID, { expiresIn: date.toISOString() }, () => {})
+}
+
+export const generateAccessToken = (res, userID, refreshTokenID) => {
+  const payload = {
+    iss: 'flyingnotes',
+    userID,
+    refreshTokenID,
+  }
+
+  const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+  })
+
+  res.setHeader('Set-Cookie', `Bearer=${accessToken}; Max-Age=${ACCESS_TOKEN_EXPIRES_IN}; HttpOnly; ${SECURE}`)
+}
 
 export const registerUser = (req, res) => {
   const { name, email, password, notes = [] } = req.body
 
   new User({ name, email, password: bcrypt.hashSync(password), notes })
     .save()
-    .then(async ({ _id, name, notes }) => {
+    .then(async ({ _id: userID, name, notes }) => {
       console.log(name + ' registered')
 
-      req.session.userID = _id
+      const refreshTokenID = await generateRefreshToken(userID)
+
+      generateAccessToken(res, userID, refreshTokenID)
+
       res.status(201).json({ name, notes })
     })
     .catch(({ message, errmsg }) => {
@@ -25,13 +68,21 @@ export const loginUser = (req, res) => {
   User.findOne({ email: email.toLowerCase() })
     .then(async user => {
       if (user) {
-        const { _id, password: hashedPassword, name, notes } = user
+        const { _id: userID, password: hashedPassword, name, notes } = user
 
         try {
           const match = await bcrypt.compare(password, hashedPassword)
 
           if (match) {
-            req.session.userID = _id
+            let { _id: refreshTokenID } = (await Token.findOne({ userID })) || {}
+
+            if (!refreshTokenID) {
+              refreshTokenID = await generateRefreshToken(userID)
+            }
+
+            generateAccessToken(res, userID, refreshTokenID)
+            updateRefreshToken(refreshTokenID)
+
             res.json({ name, notes })
           } else {
             res.status(404).send('Incorrect email or password')
@@ -46,24 +97,21 @@ export const loginUser = (req, res) => {
     .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
 }
 
-export const updateUser = (req, res) => {
-  User.findById(req.userID)
-    .then(async user => {
-      if (user) {
-        user.name = req.body.name
-        await user.save()
-        res.sendStatus(200)
-      } else {
-        res.sendStatus(404)
-      }
-    })
-    .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
+export const updateUser = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.userID, { name: req.body.name })
+
+    res.sendStatus(200)
+  } catch ({ message, errmsg }) {
+    console.error(`Error: ${message || errmsg}`)
+  }
 }
 
 export const changePassword = (req, res) => {
+  const { userID } = req
   const { password, newPassword } = req.body
 
-  User.findById(req.userID)
+  User.findById(userID)
     .then(async user => {
       if (user) {
         try {
@@ -71,7 +119,15 @@ export const changePassword = (req, res) => {
 
           if (match) {
             user.password = bcrypt.hashSync(newPassword)
+
             await user.save()
+
+            await Token.findOneAndDelete({ userID })
+
+            const refreshTokenID = await generateRefreshToken(userID)
+
+            generateAccessToken(res, userID, refreshTokenID)
+
             res.sendStatus(200)
           } else {
             res.status(404).send('Incorrect password')
@@ -86,9 +142,6 @@ export const changePassword = (req, res) => {
     .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
 }
 
-export const logoutUser = (req, res) => {
-  req.session.destroy(() => {
-    res.clearCookie('connect.sid')
-    res.sendStatus(204)
-  })
+export const logoutUser = (_, res) => {
+  res.clearCookie('Bearer').sendStatus(204)
 }
