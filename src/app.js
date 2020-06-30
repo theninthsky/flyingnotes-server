@@ -15,7 +15,7 @@ const { NODE_ENV, MONGODB_URI = 'mongodb://localhost/main', CLIENT_URL = 'http:/
 
 const app = express()
 
-const mongooseOpts = {
+export const mongooseOpts = {
   useNewUrlParser: true,
   useFindAndModify: false,
   useCreateIndex: true,
@@ -27,17 +27,6 @@ if (NODE_ENV != 'test') {
     .connect(MONGODB_URI, mongooseOpts)
     .then(() => console.log(`[Worker ${process.pid}] MongoDB is connected...`))
     .catch(({ message }) => console.error(`Error: ${message}`))
-} else {
-  import('mongodb-memory-server').then(({ default: { MongoMemoryServer } }) => {
-    const mongoServer = new MongoMemoryServer()
-
-    mongoServer.getUri().then(mongoURI => {
-      mongoose
-        .connect(mongoURI, mongooseOpts)
-        .then(() => console.log('MongoDB Memory Server is connected...'))
-        .catch(({ message }) => console.error(`Error: ${message}`))
-    })
-  })
 }
 
 app.use(express.json())
@@ -77,8 +66,6 @@ app.delete('/notes', notesController.deleteNote)
 app.get('/:noteID/file', filesController.getFile)
 
 /* Default Route */
-app.use((_, res) => {
-  res.redirect(CLIENT_URL)
-})
+app.use((_, res) => res.redirect(CLIENT_URL))
 
 export default app

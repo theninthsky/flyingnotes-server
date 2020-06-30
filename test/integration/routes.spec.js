@@ -1,9 +1,16 @@
 import chai from 'chai'
 
 import agent from './agent.js'
+import connectDB from './connect-db.js'
 import { user, newNote, newFile, updatedNote, updatedFile } from '../mocks.js'
 
 const { expect } = chai
+
+before(() => {
+  return connectDB()
+    .then(() => console.log('MongoDB Memory Server is connected...'))
+    .catch(({ message }) => console.error(`Error: ${message}`))
+})
 
 describe('User Routes', function () {
   describe('Register', function () {

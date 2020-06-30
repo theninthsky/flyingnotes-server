@@ -10,7 +10,9 @@ const {
   ACCESS_TOKEN_EXPIRES_IN = 60 * 10,
   REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3,
 } = process.env
-const SECURE = NODE_ENV == 'production' ? 'Secure' : ''
+
+const COOKIE_EXPIRES_IN = 1000 * 3600 * 24 * 31 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
+const isProduction = NODE_ENV == 'production'
 
 const generateRefreshToken = async userID => {
   const date = new Date()
@@ -39,7 +41,11 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   })
 
-  res.setHeader('Set-Cookie', `Bearer=${accessToken}; Max-Age=${ACCESS_TOKEN_EXPIRES_IN}; HttpOnly; ${SECURE}`)
+  res.cookie('Bearer', accessToken, {
+    maxAge: COOKIE_EXPIRES_IN,
+    httpOnly: true,
+    secure: isProduction,
+  })
 }
 
 export const registerUser = (req, res) => {
