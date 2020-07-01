@@ -1,4 +1,4 @@
-# Flying Notes Node Server
+# Flying Notes Node.js Server
 
 ## Environment Variables
 
@@ -6,15 +6,17 @@ A `.env` file (https://www.npmjs.com/package/dotenv) should be placed at the roo
 
 `MONGODB_URI` (required)
 
-`REDIS_URI` (required)
+`ACCESS_TOKEN_SECRET` (required)
 
-`SESSION_SECRET` (required)
+`ACCESS_TOKEN_EXPIRES_IN` (optional, default: 10 minutes)
 
-`SESSION_LIFETIME` (optional, default: 1 year)
+`REFRESH_TOKEN_EXPIRES_IN_MONTHS` (optional, default: 3)
 
 `PORT` (optional, default: 5000)
 
-`HEROKUAPP_URL` - to prevent heroku app from sleeping [depends on dynos] - (optional)
+`CLIENT_URL` (required, default: localhost:3000)
+
+`HEROKUAPP_URL` - to prevent Heroku app from sleeping [depends on dynos] - (optional)
 
 ## Available Scripts
 
@@ -26,14 +28,6 @@ Starts the server.
 
 Starts the server while listening to changes (`nodemon`).
 
-### `npm run start:test`
-
-Starts the server in testing mode (MongoDB Memory Server).
-
 ### `npm test`
 
 Performs server tests.
-
-### `npm run test:watch`
-
-Performs tests in watch mode.
