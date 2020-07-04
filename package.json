@@ -1,7 +1,6 @@
 {
-  "name": "flying-notes-server",
+  "name": "flyingnotes-server",
   "version": "1.0.0",
-  "description": "flying notes server",
   "engines": {
     "node": "13.11.0"
   },
