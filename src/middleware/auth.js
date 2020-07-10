@@ -2,41 +2,35 @@ import jwt from 'jsonwebtoken'
 
 import Token from '../models/Token.js'
 import { generateAccessToken, updateRefreshToken } from '../controllers/user.js'
+import { redirectUser } from '../app.js'
 
-const { ACCESS_TOKEN_SECRET, CLIENT_URL = 'http://localhost:3000' } = process.env
+const { ACCESS_TOKEN_SECRET } = process.env
 
-export default (req, res, next) => {
-  const { Bearer: token } = req.cookies
+export default async (res, req) => {
+  const token = req.getHeader('Bearer')
 
-  if (!token) return next()
+  if (!token) return
 
-  jwt.verify(token, ACCESS_TOKEN_SECRET, { ignoreExpiration: true }, async (err, { userID, refreshTokenID, exp }) => {
-    if (err) return res.clearCookie('Bearer').redirect(CLIENT_URL)
+  try {
+    const { userID, refreshTokenID, exp } = jwt.verify(token, ACCESS_TOKEN_SECRET, { ignoreExpiration: true })
 
-    if (Date.now() < exp * 1000) {
-      req.userID = userID
-      return next()
+    if (Date.now() < exp * 1000) return (req.userID = userID)
+
+    const { expiresIn } = await Token.findById(refreshTokenID)
+
+    const dateExpiresIn = new Date(expiresIn)
+
+    if (dateExpiresIn < new Date()) {
+      Token.findByIdAndDelete(refreshTokenID, () => {})
+
+      return res.cork(redirectUser)
     }
 
-    try {
-      const { expiresIn } = await Token.findById(refreshTokenID)
+    generateAccessToken(res, userID, refreshTokenID)
+    req.userID = userID
 
-      const dateExpiresIn = new Date(expiresIn)
-
-      if (dateExpiresIn < new Date()) {
-        Token.findByIdAndDelete(refreshTokenID, () => {})
-
-        return res.clearCookie('Bearer').redirect(CLIENT_URL)
-      }
-
-      generateAccessToken(res, userID, refreshTokenID)
-      req.userID = userID
-
-      updateRefreshToken(refreshTokenID)
-
-      next()
-    } catch (err) {
-      return res.clearCookie('Bearer').redirect(CLIENT_URL)
-    }
-  })
+    updateRefreshToken(refreshTokenID)
+  } catch (_) {
+    return res.cork(redirectUser)
+  }
 }

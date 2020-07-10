@@ -48,7 +48,7 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
   })
 }
 
-export const registerUser = (req, res) => {
+export const registerUser = (res, req) => {
   const { name, email, password, notes = [] } = req.body
 
   new User({ name, email, password: bcrypt.hashSync(password), notes })
@@ -68,7 +68,7 @@ export const registerUser = (req, res) => {
     })
 }
 
-export const loginUser = (req, res) => {
+export const loginUser = (res, req) => {
   const { email, password } = req.body
 
   User.findOne({ email: email.toLowerCase() })
@@ -91,19 +91,19 @@ export const loginUser = (req, res) => {
 
             res.json({ name, notes })
           } else {
-            res.status(404).send('Incorrect email or password')
+            res.writeStatus(404).end('Incorrect email or password')
           }
         } catch ({ message }) {
           throw Error(message)
         }
       } else {
-        res.status(404).send('No such user exists')
+        res.writeStatus(404).end('No such user exists')
       }
     })
     .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
 }
 
-export const updateUser = async (req, res) => {
+export const updateUser = async (res, req) => {
   try {
     await User.findByIdAndUpdate(req.userID, { name: req.body.name })
 
@@ -113,7 +113,7 @@ export const updateUser = async (req, res) => {
   }
 }
 
-export const changePassword = (req, res) => {
+export const changePassword = (res, req) => {
   const { userID } = req
   const { password, newPassword } = req.body
 
@@ -148,6 +148,6 @@ export const changePassword = (req, res) => {
     .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
 }
 
-export const logoutUser = (_, res) => {
+export const logoutUser = res => {
   res.clearCookie('Bearer').sendStatus(204)
 }
