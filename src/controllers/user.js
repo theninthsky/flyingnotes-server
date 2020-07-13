@@ -69,6 +69,9 @@ export const registerUser = (res, req) => {
 }
 
 export const loginUser = (res, req) => {
+  console.log('login')
+  return res.end()
+
   const { email, password } = req.body
 
   User.findOne({ email: email.toLowerCase() })

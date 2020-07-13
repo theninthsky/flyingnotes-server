@@ -2,11 +2,13 @@ import jwt from 'jsonwebtoken'
 
 import Token from '../models/Token.js'
 import { generateAccessToken, updateRefreshToken } from '../controllers/user.js'
-import { redirectUser } from '../app.js'
+import { redirectUser } from '../util.js'
 
 const { ACCESS_TOKEN_SECRET } = process.env
 
 export default async (res, req) => {
+  console.log('auth')
+
   const token = req.getHeader('Bearer')
 
   if (!token) return
