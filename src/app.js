@@ -1,13 +1,14 @@
 import uWS from 'uWebSockets.js'
 import mongoose from 'mongoose'
+// import './patch.js'
 
-import auth from './middleware/auth.js'
+import auth from './auth.js'
 import * as userController from './controllers/user.js'
 import * as notesController from './controllers/notes.js'
 import * as filesController from './controllers/files.js'
-import { redirectUser, readJson } from './util.js'
+import { redirectUser, parseBody } from './util.js'
 
-const { NODE_ENV, MONGODB_URI = 'mongodb://localhost/main', CLIENT_URL = 'http://localhost:3000' } = process.env
+const { NODE_ENV, MONGODB_URI = 'mongodb://localhost/main' } = process.env
 
 export const mongooseOpts = {
   useNewUrlParser: true,
@@ -74,9 +75,20 @@ export default uWS
       .end()
   })
   .any('/*', async (res, req) => {
+    res
+      .writeHeader('Access-Control-Allow-Origin', req.getHeader('origin') || '*')
+      .writeHeader('Access-Control-Allow-Credentials', 'true')
+      .writeHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS')
+      .writeHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+    const method = req.getMethod()
+    const url = req.getUrl()
+
     await auth(res, req)
 
-    const body = await readJson(res)
-    console.log(body)
-    router[req.getMethod()][req.getUrl()](res, req)
+    if (res.unauthorized) return res.cork(redirectUser)
+
+    req.body = await parseBody(res)
+
+    router[method][url](res, req)
   })

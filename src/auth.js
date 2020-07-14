@@ -1,14 +1,11 @@
 import jwt from 'jsonwebtoken'
 
-import Token from '../models/Token.js'
-import { generateAccessToken, updateRefreshToken } from '../controllers/user.js'
-import { redirectUser } from '../util.js'
+import Token from './models/Token.js'
+import { generateAccessToken, updateRefreshToken } from './controllers/user.js'
 
 const { ACCESS_TOKEN_SECRET } = process.env
 
 export default async (res, req) => {
-  console.log('auth')
-
   const token = req.getHeader('Bearer')
 
   if (!token) return
@@ -25,7 +22,7 @@ export default async (res, req) => {
     if (dateExpiresIn < new Date()) {
       Token.findByIdAndDelete(refreshTokenID, () => {})
 
-      return res.cork(redirectUser)
+      return (res.unauthorized = true)
     }
 
     generateAccessToken(res, userID, refreshTokenID)
@@ -33,6 +30,6 @@ export default async (res, req) => {
 
     updateRefreshToken(refreshTokenID)
   } catch (_) {
-    return res.cork(redirectUser)
+    return (res.unauthorized = true)
   }
 }

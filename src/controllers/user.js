@@ -11,7 +11,7 @@ const {
   REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3,
 } = process.env
 
-const COOKIE_EXPIRES_IN = 1000 * 3600 * 24 * 31 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
+const COOKIE_EXPIRES_IN = 3600 * 24 * 31 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
 const isProduction = NODE_ENV == 'production'
 
 const generateRefreshToken = async userID => {
@@ -41,11 +41,10 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   })
 
-  res.cookie('Bearer', accessToken, {
-    maxAge: COOKIE_EXPIRES_IN,
-    httpOnly: true,
-    secure: isProduction,
-  })
+  res.writeHeader(
+    'Set-Cookie',
+    `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; ${isProduction ? 'Secure' : ''}`,
+  )
 }
 
 export const registerUser = (res, req) => {
@@ -60,18 +59,15 @@ export const registerUser = (res, req) => {
 
       generateAccessToken(res, userID, refreshTokenID)
 
-      res.status(201).json({ name, notes })
+      res.writeStatus(201).end(JSON.stringify({ name, notes }))
     })
     .catch(({ message, errmsg }) => {
       console.error(`Error: ${message || errmsg}`)
-      res.status(409).send('This email address is already registered, try login instead')
+      res.writeStatus(409).send('This email address is already registered, try login instead')
     })
 }
 
 export const loginUser = (res, req) => {
-  console.log('login')
-  return res.end()
-
   const { email, password } = req.body
 
   User.findOne({ email: email.toLowerCase() })
@@ -92,7 +88,10 @@ export const loginUser = (res, req) => {
             generateAccessToken(res, userID, refreshTokenID)
             updateRefreshToken(refreshTokenID)
 
-            res.json({ name, notes })
+            res.cork(() => {
+              res.writeHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ name, notes }))
+            })
           } else {
             res.writeStatus(404).end('Incorrect email or password')
           }
@@ -100,7 +99,7 @@ export const loginUser = (res, req) => {
           throw Error(message)
         }
       } else {
-        res.writeStatus(404).end('No such user exists')
+        res.writeStatus(404).end('No such user')
       }
     })
     .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
@@ -110,7 +109,7 @@ export const updateUser = async (res, req) => {
   try {
     await User.findByIdAndUpdate(req.userID, { name: req.body.name })
 
-    res.sendStatus(200)
+    res.end()
   } catch ({ message, errmsg }) {
     console.error(`Error: ${message || errmsg}`)
   }
@@ -137,20 +136,22 @@ export const changePassword = (res, req) => {
 
             generateAccessToken(res, userID, refreshTokenID)
 
-            res.sendStatus(200)
+            res.end()
           } else {
-            res.status(404).send('Incorrect password')
+            res.writeStatus(404).end('Incorrect password')
           }
         } catch ({ message }) {
           throw Error(message)
         }
       } else {
-        res.sendStatus(404)
+        res.writeStatus(404).end()
       }
     })
     .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
 }
 
 export const logoutUser = res => {
-  res.clearCookie('Bearer').sendStatus(204)
+  res.cork(() =>
+    res.writeHeader('Set-Cookie', `Bearer=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`).writeStatus('204 OK').end(),
+  )
 }

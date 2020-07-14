@@ -19,6 +19,7 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "dotenv": "^8.2.0",
+    "fast-json-stable-stringify": "^2.1.0",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.20",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v18.3.0"

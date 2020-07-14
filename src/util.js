@@ -1,3 +1,5 @@
+const { CLIENT_URL = 'http://localhost:3000' } = process.env
+
 export const redirectUser = () => {
   res
     .writeStatus(303)
@@ -5,40 +7,24 @@ export const redirectUser = () => {
     .writeHeader('Location', CLIENT_URL)
 }
 
-export const readJson = res => {
-  return new Promise((resolve, reject) => {
+export const parseBody = res => {
+  return new Promise(resolve => {
     let buffer
-    /* Register data cb */
+
     res.onData((ab, isLast) => {
-      let chunk = Buffer.from(ab)
+      const curBuf = Buffer.from(ab)
+
+      buffer = buffer ? Buffer.concat([buffer, curBuf]) : isLast ? curBuf : Buffer.concat([curBuf])
+
       if (isLast) {
-        let json
-        if (buffer) {
-          try {
-            json = JSON.parse(Buffer.concat([buffer, chunk]))
-          } catch (e) {
-            /* res.close calls onAborted */
-            res.close()
-            return
-          }
-          resolve(json)
-        } else {
-          try {
-            json = JSON.parse(chunk)
-          } catch (e) {
-            /* res.close calls onAborted */
-            res.close()
-            return
-          }
-          resolve(json)
-        }
-      } else {
-        if (buffer) {
-          buffer = Buffer.concat([buffer, chunk])
-        } else {
-          buffer = Buffer.concat([chunk])
+        try {
+          resolve(JSON.parse(buffer))
+        } catch (err) {
+          resolve(null)
         }
       }
     })
+
+    res.onAborted(() => {})
   })
 }
