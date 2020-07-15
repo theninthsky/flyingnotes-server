@@ -1,30 +1,22 @@
-const { CLIENT_URL = 'http://localhost:3000' } = process.env
+export const corsHeaders = origin => ({
+  'Access-Control-Allow-Origin': origin || '*',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+})
 
-export const redirectUser = () => {
-  res
-    .writeStatus(303)
-    .writeHeader('Set-Cookie', 'Bearer=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT')
-    .writeHeader('Location', CLIENT_URL)
-}
-
-export const parseBody = res => {
+export const parseBody = req => {
   return new Promise(resolve => {
-    let buffer
+    let payload = ''
 
-    res.onData((ab, isLast) => {
-      const curBuf = Buffer.from(ab)
-
-      buffer = buffer ? Buffer.concat([buffer, curBuf]) : isLast ? curBuf : Buffer.concat([curBuf])
-
-      if (isLast) {
-        try {
-          resolve(JSON.parse(buffer))
-        } catch (err) {
-          resolve(null)
-        }
-      }
+    req.on('data', chunk => {
+      payload += chunk.toString()
     })
 
-    res.onAborted(() => {})
+    req.on('end', () => {
+      req.body = req.headers['content-type'].includes('application/json') ? JSON.parse(payload || '{}') : payload
+
+      resolve()
+    })
   })
 }

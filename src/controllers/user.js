@@ -41,13 +41,12 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   })
 
-  res.writeHeader(
-    'Set-Cookie',
-    `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; ${isProduction ? 'Secure' : ''}`,
-  )
+  res.headers['Set-Cookie'] = `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; ${
+    isProduction ? 'Secure' : ''
+  }`
 }
 
-export const registerUser = (res, req) => {
+export const registerUser = (req, res) => {
   const { name, email, password, notes = [] } = req.body
 
   new User({ name, email, password: bcrypt.hashSync(password), notes })
@@ -67,7 +66,7 @@ export const registerUser = (res, req) => {
     })
 }
 
-export const loginUser = (res, req) => {
+export const loginUser = (req, res) => {
   const { email, password } = req.body
 
   User.findOne({ email: email.toLowerCase() })
@@ -88,10 +87,7 @@ export const loginUser = (res, req) => {
             generateAccessToken(res, userID, refreshTokenID)
             updateRefreshToken(refreshTokenID)
 
-            res.cork(() => {
-              res.writeHeader('Content-Type', 'application/json')
-              res.end(JSON.stringify({ name, notes }))
-            })
+            res.json({ name, notes })
           } else {
             res.writeStatus(404).end('Incorrect email or password')
           }
@@ -105,7 +101,7 @@ export const loginUser = (res, req) => {
     .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
 }
 
-export const updateUser = async (res, req) => {
+export const updateUser = async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.userID, { name: req.body.name })
 
@@ -115,7 +111,7 @@ export const updateUser = async (res, req) => {
   }
 }
 
-export const changePassword = (res, req) => {
+export const changePassword = (req, res) => {
   const { userID } = req
   const { password, newPassword } = req.body
 
@@ -151,7 +147,7 @@ export const changePassword = (res, req) => {
 }
 
 export const logoutUser = res => {
-  res.cork(() =>
-    res.writeHeader('Set-Cookie', `Bearer=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`).writeStatus('204 OK').end(),
-  )
+  // res.cork(() => {
+  //   res.writeHeader('Set-Cookie', `Bearer=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`).send()
+  // })
 }

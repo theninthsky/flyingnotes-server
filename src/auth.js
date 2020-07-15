@@ -5,8 +5,8 @@ import { generateAccessToken, updateRefreshToken } from './controllers/user.js'
 
 const { ACCESS_TOKEN_SECRET } = process.env
 
-export default async (res, req) => {
-  const token = req.getHeader('Bearer')
+export default async (req, res) => {
+  const token = req.headers.cookie && req.headers.cookie.split('=')[1]
 
   if (!token) return
 
