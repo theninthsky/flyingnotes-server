@@ -16,20 +16,18 @@ export default async (req, res) => {
     if (Date.now() < exp * 1000) return (req.userID = userID)
 
     const { expiresIn } = await Token.findById(refreshTokenID)
-
     const dateExpiresIn = new Date(expiresIn)
 
     if (dateExpiresIn < new Date()) {
       Token.findByIdAndDelete(refreshTokenID, () => {})
 
-      return (res.unauthorized = true)
+      return (req.expired = true)
     }
 
     generateAccessToken(res, userID, refreshTokenID)
     req.userID = userID
-
     updateRefreshToken(refreshTokenID)
   } catch (_) {
-    return (res.unauthorized = true)
+    return (req.expired = true)
   }
 }

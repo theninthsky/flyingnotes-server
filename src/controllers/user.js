@@ -9,6 +9,7 @@ const {
   ACCESS_TOKEN_SECRET,
   ACCESS_TOKEN_EXPIRES_IN = 60 * 10,
   REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3,
+  CLIENT_URL = 'http://localhost:3000',
 } = process.env
 
 const COOKIE_EXPIRES_IN = 3600 * 24 * 31 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
@@ -16,6 +17,7 @@ const isProduction = NODE_ENV == 'production'
 
 const generateRefreshToken = async userID => {
   const date = new Date()
+
   date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
 
   const { _id } = await new Token({ userID, expiresIn: date.toISOString() }).save()
@@ -25,8 +27,8 @@ const generateRefreshToken = async userID => {
 
 export const updateRefreshToken = refreshTokenID => {
   const date = new Date()
-  date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
 
+  date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
   Token.findByIdAndUpdate(refreshTokenID, { expiresIn: date.toISOString() }, () => {})
 }
 
@@ -58,12 +60,9 @@ export const registerUser = (req, res) => {
 
       generateAccessToken(res, userID, refreshTokenID)
 
-      res.writeStatus(201).end(JSON.stringify({ name, notes }))
+      res.status(201).json({ name, notes })
     })
-    .catch(({ message, errmsg }) => {
-      console.error(`Error: ${message || errmsg}`)
-      res.writeStatus(409).send('This email address is already registered, try login instead')
-    })
+    .catch(() => res.status(409).send('This email address is already registered, try login instead'))
 }
 
 export const loginUser = (req, res) => {
@@ -89,13 +88,13 @@ export const loginUser = (req, res) => {
 
             res.json({ name, notes })
           } else {
-            res.writeStatus(404).end('Incorrect email or password')
+            res.status(404).send('Incorrect email or password')
           }
         } catch ({ message }) {
           throw Error(message)
         }
       } else {
-        res.writeStatus(404).end('No such user')
+        res.status(404).send('No such user')
       }
     })
     .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
@@ -105,15 +104,17 @@ export const updateUser = async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.userID, { name: req.body.name })
 
-    res.end()
+    res.send()
   } catch ({ message, errmsg }) {
     console.error(`Error: ${message || errmsg}`)
   }
 }
 
 export const changePassword = (req, res) => {
-  const { userID } = req
-  const { password, newPassword } = req.body
+  const {
+    userID,
+    body: { password, newPassword },
+  } = req
 
   User.findById(userID)
     .then(async user => {
@@ -134,20 +135,18 @@ export const changePassword = (req, res) => {
 
             res.end()
           } else {
-            res.writeStatus(404).end('Incorrect password')
+            res.status(404).send('Incorrect password')
           }
         } catch ({ message }) {
           throw Error(message)
         }
       } else {
-        res.writeStatus(404).end()
+        res.status(404).send()
       }
     })
     .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
 }
 
-export const logoutUser = res => {
-  // res.cork(() => {
-  //   res.writeHeader('Set-Cookie', `Bearer=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`).send()
-  // })
+export const logoutUser = (_, res) => {
+  res.redirect(CLIENT_URL, { clearCookie: true })
 }

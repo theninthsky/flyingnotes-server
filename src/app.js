@@ -1,14 +1,13 @@
 import { createServer } from 'http'
 import mongoose from 'mongoose'
 
-import patchResponse from './patch.js'
+import { patchRequest, patchResponse } from './patch.js'
 import auth from './auth.js'
 import * as userController from './controllers/user.js'
 import * as notesController from './controllers/notes.js'
 import * as filesController from './controllers/files.js'
-import { parseBody } from './util.js'
 
-const { NODE_ENV, MONGODB_URI = 'mongodb://localhost/main' } = process.env
+const { NODE_ENV, MONGODB_URI = 'mongodb://localhost/main', CLIENT_URL = 'http://localhost:3000' } = process.env
 
 export const mongooseOpts = {
   useNewUrlParser: true,
@@ -40,36 +39,16 @@ const router = {
   DELETE: { '/notes': notesController.deleteNote },
 }
 
-// export default uWS
-//   .App()
-//   .options('/*', (res, req) => {
-//     cors(res, req)
-//     res.end()
-//   })
-//   .any('/*', async (res, req) => {
-//     const method = req.getMethod()
-//     const url = req.getUrl()
-
-//     registerSend(res, req)
-
-//     await auth(res, req)
-
-//     if (res.unauthorized) return res.cork(redirectUser)
-
-//     req.body = await parseBody(res)
-//     router[method][url](res, req)
-//   })
-
 export default createServer(async (req, res) => {
   patchResponse(req, res)
 
   if (req.method == 'OPTIONS') return res.send()
 
-  await parseBody(req)
+  await patchRequest(req)
   await auth(req, res)
-  // if (res.unauthorized) return res.redirect(redirectUser)
+
+  if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
 
   res.headers = {}
-
   router[req.method][req.url](req, res)
 })
