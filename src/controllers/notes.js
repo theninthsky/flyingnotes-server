@@ -1,100 +1,104 @@
 import User from '../models/User.js'
 import File from '../models/File.js'
 
-export const getNotes = (req, res) => {
-  User.findById(req.userID)
-    .then(user => {
-      if (user) {
-        res.json({ notes: user.notes })
-      } else {
-        res.status(401).send('Session expired')
-      }
-    })
-    .catch(({ message, errmsg }) => {
-      console.error(`Error: ${message || errmsg}`)
-    })
+export const getNotes = async (req, res) => {
+  try {
+    const user = await User.findById(req.userID)
+
+    if (user) {
+      res.json({ notes: user.notes })
+    } else {
+      res.status(401).send('Session expired')
+    }
+  } catch ({ message, errmsg }) {
+    console.error(`Error: ${message || errmsg}`)
+  }
 }
 
-export const createNote = (req, res) => {
+export const createNote = async (req, res) => {
   const { file } = req
 
-  User.findById(req.userID)
-    .then(async user => {
-      if (user) {
-        user.notes.push({
-          ...req.body,
-          fileName: file && file.originalname,
-          date: Date.now(),
-        })
-        const { notes } = await user.save()
+  try {
+    const user = await User.findById(req.userID)
 
-        if (file) {
-          const { mimetype, buffer } = file
+    if (user) {
+      user.notes.push({
+        ...req.body,
+        fileName: file && file.originalname,
+        date: Date.now(),
+      })
+      const { notes } = await user.save()
 
-          await new File({
-            noteID: notes[notes.length - 1]._id,
-            mimetype,
-            buffer,
-          }).save()
-        }
+      if (file) {
+        const { mimetype, buffer } = file
 
-        res.status(201).json({ newNote: notes[notes.length - 1] })
+        await new File({
+          noteID: notes[notes.length - 1]._id,
+          mimetype,
+          buffer,
+        }).save()
       }
-    })
-    .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
+
+      res.status(201).json({ newNote: notes[notes.length - 1] })
+    }
+  } catch ({ message, errmsg }) {
+    console.error(`Error: ${message || errmsg}`)
+  }
 }
 
-export const updateNote = (req, res) => {
+export const updateNote = async (req, res) => {
   const { file } = req
 
-  User.findById(req.userID)
-    .then(async user => {
-      if (user) {
-        user.notes = user.notes.map(note =>
-          note._id == req.body._id
-            ? {
-                ...req.body,
-                fileName: file ? file.originalname : note.fileName,
-                date: Date.now(),
-              }
-            : note,
-        )
-        const { notes } = await user.save()
+  try {
+    const user = await User.findById(req.userID)
 
-        if (file) {
-          const { mimetype, buffer } = file
-
-          await File.findOneAndUpdate({ noteID: req.body._id }, { mimetype, buffer }).then(file => {
-            if (!file) {
-              new File({ noteID: req.body._id, mimetype, buffer }).save()
+    if (user) {
+      user.notes = user.notes.map(note =>
+        note._id == req.body._id
+          ? {
+              ...req.body,
+              fileName: file ? file.originalname : note.fileName,
+              date: Date.now(),
             }
-          })
-        }
+          : note,
+      )
+      const { notes } = await user.save()
 
-        res.json({ updatedNote: notes.find(note => note._id == req.body._id) })
+      if (file) {
+        const { mimetype, buffer } = file
+
+        await File.findOneAndUpdate({ noteID: req.body._id }, { mimetype, buffer }).then(file => {
+          if (!file) {
+            new File({ noteID: req.body._id, mimetype, buffer }).save()
+          }
+        })
       }
-    })
-    .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
+
+      res.json({ updatedNote: notes.find(note => note._id == req.body._id) })
+    }
+  } catch ({ message, errmsg }) {
+    console.error(`Error: ${message || errmsg}`)
+  }
 }
 
-export const deleteNote = (req, res) => {
+export const deleteNote = async (req, res) => {
   const { noteID } = req.body
 
-  User.findById(req.userID)
-    .then(user => {
-      if (user) {
-        if (user.notes.find(note => note._id == noteID)) {
-          user.notes = user.notes.filter(note => note._id != noteID)
-          user.save().then(() => res.sendStatus(204))
+  try {
+    const user = await User.findById(req.userID)
 
-          File.findOneAndDelete({ noteID }).then(() => {})
-        } else {
-          res.sendStatus(404)
-        }
+    if (user) {
+      if (user.notes.find(note => note._id == noteID)) {
+        user.notes = user.notes.filter(note => note._id != noteID)
+        user.save().then(() => res.sendStatus(204))
+
+        File.findOneAndDelete({ noteID }).then(() => {})
+      } else {
+        res.sendStatus(404)
       }
-    })
-    .catch(({ message, errmsg }) => {
-      console.error(`Error: ${message || errmsg}`)
-      res.redirect('/')
-    })
+    }
+  } catch ({ message, errmsg }) {
+    console.error(`Error: ${message || errmsg}`)
+    res.redirect('/')
+  }
 }

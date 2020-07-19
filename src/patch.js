@@ -29,10 +29,16 @@ export const patchRequest = async req => {
 }
 
 export const patchResponse = (req, res) => {
+  res.headers = {}
+
   res.status = code => {
     res.statusCode = code
 
     return res
+  }
+
+  res.sendStatus = code => {
+    res.status(code).send()
   }
 
   res.send = body => {
@@ -46,7 +52,7 @@ export const patchResponse = (req, res) => {
         ...corsHeaders(req.headers.origin),
         'Content-Type': 'application/json',
       })
-      .end(JSON.stringify(body))
+      .end(stringify(body))
   }
 
   res.redirect = (url, { clearCookie } = {}) => {

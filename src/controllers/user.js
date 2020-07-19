@@ -48,56 +48,61 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
   }`
 }
 
-export const registerUser = (req, res) => {
+export const registerUser = async (req, res) => {
   const { name, email, password, notes = [] } = req.body
 
-  new User({ name, email, password: bcrypt.hashSync(password), notes })
-    .save()
-    .then(async ({ _id: userID, name, notes }) => {
-      console.log(name + ' registered')
+  try {
+    const user = await new User({
+      name,
+      email,
+      password: bcrypt.hashSync(password),
+      notes,
+    }).save()
 
-      const refreshTokenID = await generateRefreshToken(userID)
+    console.log(user.name + ' registered')
 
-      generateAccessToken(res, userID, refreshTokenID)
+    const refreshTokenID = await generateRefreshToken(user._id)
 
-      res.status(201).json({ name, notes })
-    })
-    .catch(() => res.status(409).send('This email address is already registered, try login instead'))
+    generateAccessToken(res, user._id, refreshTokenID)
+
+    res.status(201).json({ name: user.name, notes: user.notes })
+  } catch (err) {
+    res.status(409).send('This email address is already registered, try login instead')
+    console.log(err)
+  }
 }
 
-export const loginUser = (req, res) => {
+export const loginUser = async (req, res) => {
   const { email, password } = req.body
 
-  User.findOne({ email: email.toLowerCase() })
-    .then(async user => {
-      if (user) {
-        const { _id: userID, password: hashedPassword, name, notes } = user
+  try {
+    const user = await User.findOne({ email: email.toLowerCase() })
 
-        try {
-          const match = await bcrypt.compare(password, hashedPassword)
+    if (user) {
+      const { _id: userID, password: hashedPassword, name, notes } = user
 
-          if (match) {
-            let { _id: refreshTokenID } = (await Token.findOne({ userID })) || {}
+      const match = await bcrypt.compare(password, hashedPassword)
 
-            if (!refreshTokenID) {
-              refreshTokenID = await generateRefreshToken(userID)
-            }
+      if (match) {
+        let { _id: refreshTokenID } = (await Token.findOne({ userID })) || {}
 
-            generateAccessToken(res, userID, refreshTokenID)
-            updateRefreshToken(refreshTokenID)
-
-            res.json({ name, notes })
-          } else {
-            res.status(404).send('Incorrect email or password')
-          }
-        } catch ({ message }) {
-          throw Error(message)
+        if (!refreshTokenID) {
+          refreshTokenID = await generateRefreshToken(userID)
         }
+
+        generateAccessToken(res, userID, refreshTokenID)
+        updateRefreshToken(refreshTokenID)
+
+        res.json({ name, notes })
       } else {
-        res.status(404).send('No such user')
+        res.status(404).send('Incorrect email or password')
       }
-    })
-    .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
+    } else {
+      res.status(404).send('No such user')
+    }
+  } catch ({ message, errmsg }) {
+    console.error(`Error: ${message || errmsg}`)
+  }
 }
 
 export const updateUser = async (req, res) => {
@@ -110,41 +115,38 @@ export const updateUser = async (req, res) => {
   }
 }
 
-export const changePassword = (req, res) => {
+export const changePassword = async (req, res) => {
   const {
     userID,
     body: { password, newPassword },
   } = req
 
-  User.findById(userID)
-    .then(async user => {
-      if (user) {
-        try {
-          const match = await bcrypt.compare(password, user.password)
+  try {
+    const user = await User.findById(userID)
 
-          if (match) {
-            user.password = bcrypt.hashSync(newPassword)
+    if (user) {
+      const match = await bcrypt.compare(password, user.password)
 
-            await user.save()
+      if (match) {
+        user.password = bcrypt.hashSync(newPassword)
 
-            await Token.findOneAndDelete({ userID })
+        await user.save()
+        await Token.findOneAndDelete({ userID })
 
-            const refreshTokenID = await generateRefreshToken(userID)
+        const refreshTokenID = await generateRefreshToken(userID)
 
-            generateAccessToken(res, userID, refreshTokenID)
+        generateAccessToken(res, userID, refreshTokenID)
 
-            res.end()
-          } else {
-            res.status(404).send('Incorrect password')
-          }
-        } catch ({ message }) {
-          throw Error(message)
-        }
+        res.send()
       } else {
-        res.status(404).send()
+        res.status(404).send('Incorrect password')
       }
-    })
-    .catch(({ message, errmsg }) => console.error(`Error: ${message || errmsg}`))
+    } else {
+      res.status(404).send()
+    }
+  } catch ({ message, errmsg }) {
+    console.error(`Error: ${message || errmsg}`)
+  }
 }
 
 export const logoutUser = (_, res) => {

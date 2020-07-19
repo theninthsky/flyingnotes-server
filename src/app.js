@@ -49,6 +49,5 @@ export default createServer(async (req, res) => {
 
   if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
 
-  res.headers = {}
   router[req.method][req.url](req, res)
 })
