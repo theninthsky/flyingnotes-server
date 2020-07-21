@@ -24,7 +24,7 @@ if (NODE_ENV != 'test') {
 }
 
 const router = {
-  GET: { '/notes': notesController.getNotes, [/file/]: filesController.getFile }, // seems impossible
+  GET: { '/notes': notesController.getNotes },
   POST: {
     '/register': userController.registerUser,
     '/login': userController.loginUser,
@@ -42,7 +42,7 @@ const router = {
 export default createServer(async (req, res) => {
   patchResponse(req, res)
 
-  if (req.method == 'OPTIONS') return res.send()
+  if (req.method == 'OPTIONS') return res.sendStatus(204)
 
   await patchRequest(req)
   await auth(req, res)

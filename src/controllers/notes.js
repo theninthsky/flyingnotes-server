@@ -16,15 +16,21 @@ export const getNotes = async (req, res) => {
 }
 
 export const createNote = async (req, res) => {
-  const { file } = req
+  const {
+    file,
+    body: { color, category, title, content },
+  } = req
 
   try {
     const user = await User.findById(req.userID)
 
     if (user) {
       user.notes.push({
-        ...req.body,
-        fileName: file && file.originalname,
+        color,
+        category,
+        title,
+        content,
+        fileName: file && file.name,
         date: Date.now(),
       })
       const { notes } = await user.save()
@@ -47,34 +53,39 @@ export const createNote = async (req, res) => {
 }
 
 export const updateNote = async (req, res) => {
-  const { file } = req
+  const {
+    file,
+    body: { _id: noteID, color, category, title, content },
+  } = req
 
   try {
     const user = await User.findById(req.userID)
 
     if (user) {
       user.notes = user.notes.map(note =>
-        note._id == req.body._id
+        note._id == noteID
           ? {
-              ...req.body,
-              fileName: file ? file.originalname : note.fileName,
+              _id: noteID,
+              color,
+              category,
+              title,
+              content,
+              fileName: file ? file.name : note.fileName,
               date: Date.now(),
             }
           : note,
       )
+
       const { notes } = await user.save()
 
       if (file) {
         const { mimetype, buffer } = file
+        const options = { upsert: true, setDefaultsOnInsert: true }
 
-        await File.findOneAndUpdate({ noteID: req.body._id }, { mimetype, buffer }).then(file => {
-          if (!file) {
-            new File({ noteID: req.body._id, mimetype, buffer }).save()
-          }
-        })
+        await File.findOneAndUpdate({ noteID }, { mimetype, buffer }, options)
       }
 
-      res.json({ updatedNote: notes.find(note => note._id == req.body._id) })
+      res.json({ updatedNote: notes.find(({ _id }) => _id == noteID) })
     }
   } catch ({ message, errmsg }) {
     console.error(`Error: ${message || errmsg}`)
@@ -88,9 +99,12 @@ export const deleteNote = async (req, res) => {
     const user = await User.findById(req.userID)
 
     if (user) {
-      if (user.notes.find(note => note._id == noteID)) {
-        user.notes = user.notes.filter(note => note._id != noteID)
-        user.save().then(() => res.sendStatus(204))
+      if (user.notes.find(({ _id }) => _id == noteID)) {
+        user.notes = user.notes.filter(({ _id }) => _id != noteID)
+
+        await user.save()
+
+        res.sendStatus(204)
 
         File.findOneAndDelete({ noteID }).then(() => {})
       } else {

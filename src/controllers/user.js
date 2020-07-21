@@ -43,7 +43,7 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   })
 
-  res.headers['Set-Cookie'] = `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; ${
+  res.headers['Set-Cookie'] = `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; Same-Site=None; ${
     isProduction ? 'Secure' : ''
   }`
 }
@@ -142,7 +142,7 @@ export const changePassword = async (req, res) => {
         res.status(404).send('Incorrect password')
       }
     } else {
-      res.status(404).send()
+      res.sendStatus(404)
     }
   } catch ({ message, errmsg }) {
     console.error(`Error: ${message || errmsg}`)

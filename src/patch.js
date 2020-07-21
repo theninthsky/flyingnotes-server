@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs'
+import formidable from 'formidable'
 import stringify from 'fast-json-stable-stringify'
 
 import { corsHeaders } from './util.js'
@@ -6,25 +8,39 @@ const CLEAR_COOKIE = 'Bearer=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
 
 export const patchRequest = async req => {
   await new Promise(resolve => {
-    let payload = ''
+    const { 'content-type': contentType = '' } = req.headers
 
-    req.on('data', chunk => {
-      payload += chunk.toString()
-    })
+    if (contentType.includes('multipart/form-data')) {
+      formidable({ maxFileSize: 10 * 1024 * 1024 }).parse(req, (err, fields, { file }) => {
+        if (err) return res.sendStatus(500)
 
-    req.on('end', () => {
-      const { 'content-type': contentType } = req.headers
+        req.body = fields
 
-      if (contentType) {
+        if (file) {
+          const { name, type, path } = file
+
+          req.file = { name, mimetype: type, buffer: readFileSync(path) }
+        }
+
+        resolve()
+      })
+    } else {
+      let payload = ''
+
+      req.on('data', chunk => {
+        payload += chunk.toString()
+      })
+
+      req.on('end', () => {
         try {
           req.body = contentType.includes('application/json') ? JSON.parse(payload || '{}') : payload
         } catch ({ message }) {
           console.error(`Error: ${message}`)
         }
-      }
 
-      resolve()
-    })
+        resolve()
+      })
+    }
   })
 }
 
