@@ -1,19 +1,13 @@
-import express from 'express'
+import { createServer } from 'http'
 import mongoose from 'mongoose'
-import cookieParser from 'cookie-parser'
-import multer from 'multer'
-import helmet from 'helmet'
-import cors from 'cors'
 
-import auth from './middleware/auth.js'
-
+import { patchRequest, patchResponse } from './patch.js'
+import auth from './auth.js'
 import * as userController from './controllers/user.js'
 import * as notesController from './controllers/notes.js'
 import * as filesController from './controllers/files.js'
 
 const { NODE_ENV, MONGODB_URI = 'mongodb://localhost/main', CLIENT_URL = 'http://localhost:3000' } = process.env
-
-const app = express()
 
 export const mongooseOpts = {
   useNewUrlParser: true,
@@ -29,43 +23,32 @@ if (NODE_ENV != 'test') {
     .catch(({ message }) => console.error(`Error: ${message}`))
 }
 
-app.use(express.json())
-app.use(cookieParser())
-app.use(multer({ limits: { fileSize: 1024 * 1024 * 10 } }).single('file'))
-app.use(helmet())
-app.use(
-  cors({
-    origin: CLIENT_URL,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type'],
-  }),
-)
+const router = {
+  GET: { '/notes': notesController.getNotes },
+  POST: {
+    '/register': userController.registerUser,
+    '/login': userController.loginUser,
+    '/logout': userController.logoutUser,
+    '/notes': notesController.createNote,
+    '/file': filesController.getFile,
+  },
+  PUT: {
+    '/update': userController.updateUser,
+    '/register': userController.changePassword,
+    '/notes': notesController.updateNote,
+  },
+  DELETE: { '/notes': notesController.deleteNote },
+}
 
-app.use(auth)
+export default createServer(async (req, res) => {
+  patchResponse(req, res)
 
-/* User Routes */
-app.post('/register', userController.registerUser)
-app.post('/login', userController.loginUser)
-app.put('/update', userController.updateUser)
-app.put('/register', userController.changePassword)
-app.post('/logout', userController.logoutUser)
+  if (req.method == 'OPTIONS') return res.sendStatus(204)
 
-app.use((req, res, next) => {
-  if (!req.userID) return res.redirect(CLIENT_URL)
-  next()
+  await patchRequest(req)
+  await auth(req, res)
+
+  if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
+
+  router[req.method][req.url](req, res)
 })
-
-/* Notes Routes */
-app.get('/notes', notesController.getNotes)
-app.post('/notes', notesController.createNote)
-app.put('/notes', notesController.updateNote)
-app.delete('/notes', notesController.deleteNote)
-
-/* Files Routes */
-app.get('/:noteID/file', filesController.getFile)
-
-/* Default Route */
-app.use((_, res) => res.redirect(CLIENT_URL))
-
-export default app
