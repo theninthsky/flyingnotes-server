@@ -12,7 +12,7 @@ export const patchRequest = async req => {
 
     if (contentType.includes('multipart/form-data')) {
       formidable({ maxFileSize: 10 * 1024 * 1024 }).parse(req, (err, fields, { file }) => {
-        if (err) return res.sendStatus(500)
+        if (err) return (req.body = {})
 
         req.body = fields
 

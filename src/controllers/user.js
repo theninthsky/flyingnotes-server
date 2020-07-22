@@ -68,7 +68,6 @@ export const registerUser = async (req, res) => {
     res.status(201).json({ name: user.name, notes: user.notes })
   } catch (err) {
     res.status(409).send('This email address is already registered, try login instead')
-    console.log(err)
   }
 }
 
@@ -150,5 +149,5 @@ export const changePassword = async (req, res) => {
 }
 
 export const logoutUser = (_, res) => {
-  res.redirect(CLIENT_URL, { clearCookie: true })
+  res.status(204).redirect(CLIENT_URL, { clearCookie: true })
 }

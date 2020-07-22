@@ -6,7 +6,7 @@ import { user, newNote, newFile, updatedNote, updatedFile } from '../mocks.js'
 
 const { expect } = chai
 
-before(() => {
+before(function () {
   return connectDB()
     .then(() => console.log('MongoDB Memory Server is connected...'))
     .catch(({ message }) => console.error(`Error: ${message}`))
@@ -175,7 +175,10 @@ describe('Note Routes', function () {
 describe('File Routes', function () {
   describe('Download', function () {
     it('should send a file', async function () {
-      const res = await agent.get(`/${user.notes[user.notes.length - 1]._id}/file`).buffer()
+      const res = await agent
+        .post(`/file`)
+        .send({ noteID: user.notes[user.notes.length - 1]._id })
+        .buffer()
 
       expect(res.body).to.deep.equal(updatedFile.buffer)
     })

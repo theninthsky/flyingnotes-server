@@ -20,9 +20,9 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^8.2.0",
     "fast-json-stable-stringify": "^2.1.0",
-    "formidable": "^2.0.0-canary.20200504.1",
+    "formidable": "^2.0.0-dev.20200131.2",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.9.20"
+    "mongoose": "^5.9.25"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
