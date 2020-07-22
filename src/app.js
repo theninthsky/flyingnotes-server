@@ -30,6 +30,7 @@ const router = {
     '/login': userController.loginUser,
     '/logout': userController.logoutUser,
     '/notes': notesController.createNote,
+    '/file': filesController.getFile,
   },
   PUT: {
     '/update': userController.updateUser,

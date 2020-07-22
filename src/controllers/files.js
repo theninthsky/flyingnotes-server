@@ -4,7 +4,7 @@ export const getFile = async (req, res) => {
   if (!req.userID) return res.status(404).send()
 
   try {
-    const file = await File.findOne({ noteID: req.params.noteID })
+    const file = await File.findOne({ noteID: req.body.noteID })
 
     if (file) {
       const { mimetype, buffer } = file
