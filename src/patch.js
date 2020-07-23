@@ -1,5 +1,4 @@
-import { readFileSync } from 'fs'
-import formidable from 'formidable'
+import Busboy from 'busboy'
 import stringify from 'fast-json-stable-stringify'
 
 import { corsHeaders } from './util.js'
@@ -11,19 +10,29 @@ export const patchRequest = async req => {
     const { 'content-type': contentType = '' } = req.headers
 
     if (contentType.includes('multipart/form-data')) {
-      formidable({ maxFileSize: 10 * 1024 * 1024 }).parse(req, (err, fields, { file }) => {
-        if (err) return (req.body = {})
+      const busboy = new Busboy({ headers: req.headers })
 
-        req.body = fields
+      req.body = {}
 
-        if (file) {
-          const { name, type, path } = file
+      busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+        console.log(
+          'File [' + fieldname + ']: filename: ' + filename + ', encoding: ' + encoding + ', mimetype: ' + mimetype,
+        )
 
-          req.file = { name, mimetype: type, buffer: readFileSync(path) }
-        }
+        file.on('data', data => {
+          console.log('File [' + fieldname + '] got ' + data.length + ' bytes')
+        })
 
-        resolve()
+        file.on('end', () => {
+          console.log('File [' + fieldname + '] Finished')
+        })
       })
+
+      busboy.on('field', (fieldName, val) => (req.body[fieldName] = val))
+
+      busboy.on('finish', () => /*resolve()*/ console.log(req.body))
+
+      req.pipe(busboy)
     } else {
       let payload = ''
 

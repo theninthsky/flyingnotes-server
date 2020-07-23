@@ -45,7 +45,7 @@ export default createServer(async (req, res) => {
 
   if (req.method == 'OPTIONS') return res.sendStatus(204)
 
-  await patchRequest(req)
+  await patchRequest(req, res, () => {})
   await auth(req, res)
 
   if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
