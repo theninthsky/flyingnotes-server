@@ -14,23 +14,15 @@ export const patchRequest = async req => {
 
       req.body = {}
 
-      busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-        console.log(
-          'File [' + fieldname + ']: filename: ' + filename + ', encoding: ' + encoding + ', mimetype: ' + mimetype,
-        )
+      busboy.on('file', (fieldName, file, name, encoding, mimetype) => {
+        const data = []
 
-        file.on('data', data => {
-          console.log('File [' + fieldname + '] got ' + data.length + ' bytes')
-        })
-
-        file.on('end', () => {
-          console.log('File [' + fieldname + '] Finished')
-        })
+        file.on('data', chunk => data.push(chunk))
+        file.on('end', () => (req.file = { name, mimetype, buffer: Buffer.concat(data) }))
       })
 
       busboy.on('field', (fieldName, val) => (req.body[fieldName] = val))
-
-      busboy.on('finish', () => /*resolve()*/ console.log(req.body))
+      busboy.on('finish', () => resolve())
 
       req.pipe(busboy)
     } else {
