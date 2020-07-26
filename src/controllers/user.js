@@ -1,52 +1,10 @@
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
 
 import User from '../models/User.js'
 import Token from '../models/Token.js'
+import { generateRefreshToken, updateRefreshToken, generateAccessToken } from '../util.js'
 
-const {
-  NODE_ENV,
-  ACCESS_TOKEN_SECRET,
-  ACCESS_TOKEN_EXPIRES_IN = 60 * 10,
-  REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3,
-  CLIENT_URL = 'http://localhost:3000',
-} = process.env
-
-const COOKIE_EXPIRES_IN = 3600 * 24 * 31 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
-const isProduction = NODE_ENV == 'production'
-
-const generateRefreshToken = async userID => {
-  const date = new Date()
-
-  date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
-
-  const { _id } = await new Token({ userID, expiresIn: date.toISOString() }).save()
-
-  return _id
-}
-
-export const updateRefreshToken = refreshTokenID => {
-  const date = new Date()
-
-  date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
-  Token.findByIdAndUpdate(refreshTokenID, { expiresIn: date.toISOString() }, () => {})
-}
-
-export const generateAccessToken = (res, userID, refreshTokenID) => {
-  const payload = {
-    iss: 'flyingnotes',
-    userID,
-    refreshTokenID,
-  }
-
-  const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRES_IN,
-  })
-
-  res.headers['Set-Cookie'] = `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; Same-Site=None; ${
-    isProduction ? 'Secure' : ''
-  }`
-}
+const { CLIENT_URL = 'http://localhost:3000' } = process.env
 
 export const registerUser = async (req, res) => {
   const { name, email, password, notes = [] } = req.body
@@ -59,7 +17,7 @@ export const registerUser = async (req, res) => {
       notes,
     }).save()
 
-    console.log(user.name + ' registered')
+    console.log(`${user.name}  registered`)
 
     const refreshTokenID = await generateRefreshToken(user._id)
 

@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 
 import Token from './models/Token.js'
-import { generateAccessToken, updateRefreshToken } from './controllers/user.js'
+import { generateAccessToken, updateRefreshToken } from './util.js'
 
 const { ACCESS_TOKEN_SECRET } = process.env
 
@@ -16,9 +16,8 @@ export default async (req, res) => {
     if (Date.now() < exp * 1000) return (req.userID = userID)
 
     const { expiresIn } = await Token.findById(refreshTokenID)
-    const dateExpiresIn = new Date(expiresIn)
 
-    if (dateExpiresIn < new Date()) {
+    if (new Date(expiresIn) < new Date()) {
       Token.findByIdAndDelete(refreshTokenID, () => {})
 
       return (req.expired = true)
