@@ -1,6 +1,6 @@
 import os from 'os'
 import cluster from 'cluster'
-import http from 'http'
+import https from 'https'
 
 const {
   NODE_ENV,
@@ -21,7 +21,7 @@ if (cluster.isMaster && NODE_ENV == 'production') {
     cluster.fork()
   })
 
-  setInterval(() => http.get(SERVER_URL), 900000) // keep Heroku app awake
+  setInterval(() => https.get(SERVER_URL), 900000) // keep Heroku app awake
 } else {
   import('./app.js').then(({ default: app }) => {
     app.listen(PORT, () => console.log(`[Worker ${process.pid}] Listening on port ${PORT}...`))
