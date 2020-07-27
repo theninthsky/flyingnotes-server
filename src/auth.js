@@ -6,7 +6,8 @@ import { generateAccessToken, updateRefreshToken } from './util.js'
 const { ACCESS_TOKEN_SECRET } = process.env
 
 export default async (req, res) => {
-  const token = req.headers.cookie && req.headers.cookie.startsWith('Bearer') && req.headers.cookie.split('=')[1]
+  const { cookie = '' } = req.headers
+  const [token] = cookie.match(/(?<=Bearer=)[\w.-]+/) || []
 
   if (!token) return
 

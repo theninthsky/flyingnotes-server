@@ -23,11 +23,16 @@ if (NODE_ENV != 'test') {
     .catch(({ message }) => console.error(`Error: ${message}`))
 }
 
-const router = {
-  GET: { '/notes': notesController.getNotes },
+const publicRouter = {
   POST: {
     '/register': userController.registerUser,
     '/login': userController.loginUser,
+  },
+}
+
+const privateRouter = {
+  GET: { '/notes': notesController.getNotes },
+  POST: {
     '/logout': userController.logoutUser,
     '/notes': notesController.createNote,
     '/file': filesController.getFile,
@@ -49,6 +54,7 @@ export default createServer(async (req, res) => {
   await auth(req, res)
 
   if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
+  if (!req.userID) return publicRouter[req.method][req.url](req, res)
 
-  router[req.method][req.url](req, res)
+  privateRouter[req.method][req.url](req, res)
 })
