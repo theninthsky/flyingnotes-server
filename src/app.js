@@ -33,6 +33,8 @@ const publicRouter = {
 const privateRouter = {
   GET: { '/notes': notesController.getNotes },
   POST: {
+    '/register': userController.registerUser,
+    '/login': userController.loginUser,
     '/logout': userController.logoutUser,
     '/notes': notesController.createNote,
     '/file': filesController.getFile,
