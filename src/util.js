@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
+import mongodb from 'mongodb'
 
-import Token from './models/Token.js'
+import { tokens } from './database.js'
 
 const {
   NODE_ENV,
@@ -8,8 +9,9 @@ const {
   ACCESS_TOKEN_EXPIRES_IN = 60 * 10,
   REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3,
 } = process.env
+const { ObjectID } = mongodb
 
-const COOKIE_EXPIRES_IN = 3600 * 24 * 31 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
+const COOKIE_EXPIRES_IN = 3600 * 24 * 30 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
 const isProduction = NODE_ENV == 'production'
 
 export const corsHeaders = origin => ({
@@ -24,7 +26,7 @@ export const generateRefreshToken = async userID => {
 
   date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
 
-  const { _id } = await new Token({ userID, expiresIn: date.toISOString() }).save()
+  const [{ _id }] = (await tokens.insertOne({ userID: ObjectID(userID), expiresIn: date.toISOString() })).ops
 
   return _id
 }
@@ -33,7 +35,7 @@ export const updateRefreshToken = refreshTokenID => {
   const date = new Date()
 
   date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
-  Token.findByIdAndUpdate(refreshTokenID, { expiresIn: date.toISOString() }, () => {})
+  tokens.updateOne({ _id: ObjectID(refreshTokenID) }, { $set: { expiresIn: date.toISOString() } })
 }
 
 export const generateAccessToken = (res, userID, refreshTokenID) => {
