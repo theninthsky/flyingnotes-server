@@ -3,8 +3,8 @@ import { createServer } from 'http'
 import { patchRequest, patchResponse } from './patch.js'
 import auth from './auth.js'
 import * as userController from './controllers/user.js'
-// import * as notesController from './controllers/notes.js'
-// import * as filesController from './controllers/files.js'
+import * as notesController from './controllers/notes.js'
+import * as filesController from './controllers/files.js'
 
 const { CLIENT_URL = 'http://localhost:3000' } = process.env
 
@@ -16,20 +16,20 @@ const publicRouter = {
 }
 
 const privateRouter = {
-  // GET: { '/notes': notesController.getNotes },
+  GET: { '/notes': notesController.getNotes },
   POST: {
     '/register': userController.registerUser,
     '/login': userController.loginUser,
     '/logout': userController.logoutUser,
-    //   '/notes': notesController.createNote,
-    //   '/file': filesController.getFile,
+    '/notes': notesController.createNote,
+    '/file': filesController.getFile,
   },
   PUT: {
     '/update': userController.updateUser,
     '/register': userController.changePassword,
-    //   '/notes': notesController.updateNote,
+    '/notes': notesController.updateNote,
   },
-  // DELETE: { '/notes': notesController.deleteNote },
+  DELETE: { '/notes': notesController.deleteNote },
 }
 
 export default createServer(async (req, res) => {

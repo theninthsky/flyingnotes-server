@@ -55,6 +55,7 @@ export const loginUser = async (req, res) => {
     }
   } catch (err) {
     console.error(err)
+    res.sendStatus(500)
   }
 }
 
@@ -65,6 +66,7 @@ export const updateUser = async (req, res) => {
     res.send()
   } catch (err) {
     console.error(err)
+    res.sendStatus(500)
   }
 }
 
@@ -95,8 +97,9 @@ export const changePassword = async (req, res) => {
     } else {
       res.sendStatus(404)
     }
-  } catch ({ message, errmsg }) {
-    console.error(`Error: ${message || errmsg}`)
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
   }
 }
 

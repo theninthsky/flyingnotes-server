@@ -1,118 +1,124 @@
-import User from '../models/User.js'
-import File from '../models/File.js'
+import mongodb from 'mongodb'
+
+import { users, files } from '../database.js'
+
+const { ObjectID } = mongodb
 
 export const getNotes = async (req, res) => {
   try {
-    const user = await User.findById(req.userID)
+    const { notes } = await users.findOne({ _id: ObjectID(req.userID) }, { projection: { notes: 1 } })
 
-    if (user) {
-      res.json({ notes: user.notes })
-    } else {
-      res.status(401).send('Session expired')
-    }
-  } catch ({ message, errmsg }) {
-    console.error(`Error: ${message || errmsg}`)
+    res.json({ notes })
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
   }
 }
 
 export const createNote = async (req, res) => {
   const {
-    file,
     body: { color, category, title, content },
+    file,
   } = req
 
   try {
-    const user = await User.findById(req.userID)
+    const [newNote] = (
+      await users.findOneAndUpdate(
+        { _id: ObjectID(req.userID) },
+        {
+          $push: {
+            notes: {
+              _id: ObjectID(),
+              color,
+              category,
+              title,
+              content,
+              fileName: file && file.name,
+              date: new Date(),
+            },
+          },
+        },
+        { projection: { notes: { $slice: -1 } }, returnOriginal: false },
+      )
+    ).value.notes
 
-    if (user) {
-      user.notes.push({
-        color,
-        category,
-        title,
-        content,
-        fileName: file && file.name,
-        date: Date.now(),
+    if (file) {
+      const { mimetype, buffer } = file
+
+      await files.insertOne({
+        noteID: newNote._id,
+        mimetype,
+        buffer,
       })
-      const { notes } = await user.save()
-
-      if (file) {
-        const { mimetype, buffer } = file
-
-        await new File({
-          noteID: notes[notes.length - 1]._id,
-          mimetype,
-          buffer,
-        }).save()
-      }
-
-      res.status(201).json({ newNote: notes[notes.length - 1] })
     }
-  } catch ({ message, errmsg }) {
-    console.error(`Error: ${message || errmsg}`)
+
+    res.status(201).json({ newNote })
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
   }
 }
 
 export const updateNote = async (req, res) => {
   const {
-    file,
+    userID,
     body: { _id: noteID, color, category, title, content },
+    file,
   } = req
 
   try {
-    const user = await User.findById(req.userID)
-
-    if (user) {
-      user.notes = user.notes.map(note =>
-        note._id == noteID
-          ? {
-              _id: noteID,
+    const [updatedNote] = (
+      await users.findOneAndUpdate(
+        { _id: ObjectID(userID), 'notes._id': ObjectID(noteID) },
+        {
+          $set: {
+            'notes.$': {
+              _id: ObjectID(noteID),
               color,
               category,
               title,
               content,
-              fileName: file ? file.name : note.fileName,
-              date: Date.now(),
-            }
-          : note,
+              fileName: file && file.name,
+              date: new Date(),
+            },
+          },
+        },
+        { projection: { notes: { $elemMatch: { _id: ObjectID(noteID) } } }, returnOriginal: false },
       )
+    ).value.notes
 
-      const { notes } = await user.save()
+    if (file) {
+      const { mimetype, buffer } = file
 
-      if (file) {
-        const { mimetype, buffer } = file
-        const options = { upsert: true, setDefaultsOnInsert: true }
-
-        await File.findOneAndUpdate({ noteID }, { mimetype, buffer }, options)
-      }
-
-      res.json({ updatedNote: notes.find(({ _id }) => _id == noteID) })
+      await files.findOneAndReplace(
+        { noteID: ObjectID(noteID) },
+        { noteID: ObjectID(updatedNote._id), mimetype, buffer },
+        { upsert: true },
+      )
     }
-  } catch ({ message, errmsg }) {
-    console.error(`Error: ${message || errmsg}`)
+
+    res.json({ updatedNote })
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
   }
 }
 
 export const deleteNote = async (req, res) => {
-  const { noteID } = req.body
+  const {
+    userID,
+    body: { noteID },
+  } = req
 
   try {
-    const user = await User.findById(req.userID)
+    await Promise.all([
+      users.updateOne({ _id: ObjectID(userID) }, { $pull: { notes: { _id: ObjectID(noteID) } } }),
+      files.deleteOne({ noteID: ObjectID(noteID) }),
+    ])
 
-    if (user) {
-      if (user.notes.find(({ _id }) => _id == noteID)) {
-        user.notes = user.notes.filter(({ _id }) => _id != noteID)
-
-        await user.save()
-
-        res.sendStatus(204)
-
-        File.findOneAndDelete({ noteID }).then(() => {})
-      } else {
-        res.sendStatus(404)
-      }
-    }
-  } catch ({ message, errmsg }) {
-    console.error(`Error: ${message || errmsg}`)
-    res.redirect('/')
+    res.sendStatus(204)
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
   }
 }

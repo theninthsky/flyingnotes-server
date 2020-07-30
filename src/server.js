@@ -24,7 +24,12 @@ if (cluster.isMaster && NODE_ENV == 'production') {
   setInterval(() => https.get(SERVER_URL), 900000) // keep Heroku app awake
 } else {
   import('./database.js').then(async ({ connect }) => {
-    await connect()
+    try {
+      await connect()
+    } catch (err) {
+      console.error(err)
+      process.exit(1)
+    }
 
     const { default: app } = await import('./app.js')
 
