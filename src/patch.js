@@ -3,7 +3,7 @@ import stringify from 'fast-json-stable-stringify'
 
 import { corsHeaders } from './util.js'
 
-const CLEAR_COOKIE = 'Bearer=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+const isProduction = process.env.NODE_ENV == 'production'
 
 export const patchRequest = async req => {
   await new Promise(resolve => {
@@ -75,7 +75,10 @@ export const patchResponse = (req, res) => {
   res.redirect = (url, { clearCookie } = {}) => {
     res.headers.Location = url
 
-    if (clearCookie) res.headers['Set-Cookie'] = CLEAR_COOKIE
+    if (clearCookie)
+      res.headers['Set-Cookie'] = `Bearer=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=None ${
+        isProduction ? '; Secure' : ''
+      }`
 
     res.send()
   }

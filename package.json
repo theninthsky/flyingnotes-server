@@ -2,7 +2,7 @@
   "name": "flyingnotes-server",
   "version": "1.0.0",
   "engines": {
-    "node": "13.11.0"
+    "node": "14.7.0"
   },
   "type": "module",
   "main": "src/server.js",
@@ -22,7 +22,7 @@
     "dotenv": "^8.2.0",
     "fast-json-stable-stringify": "^2.1.0",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^3.5.9"
+    "mongodb": "^3.6.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
@@ -32,7 +32,7 @@
     "eslint": "^6.8.0",
     "eslint-plugin-mocha": "^6.3.0",
     "mocha": "^7.2.0",
-    "mongodb-memory-server": "^6.6.1",
+    "mongodb-memory-server": "^6.6.3",
     "nodemon": "^2.0.4"
   }
 }
