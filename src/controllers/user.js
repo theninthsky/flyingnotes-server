@@ -1,23 +1,19 @@
 import bcrypt from 'bcryptjs'
+import mongodb from 'mongodb'
 
-import User from '../models/User.js'
-import Token from '../models/Token.js'
+import { users, tokens } from '../database.js'
 import { generateRefreshToken, updateRefreshToken, generateAccessToken } from '../util.js'
 
 const { CLIENT_URL = 'http://localhost:3000' } = process.env
+const { ObjectID } = mongodb
 
 export const registerUser = async (req, res) => {
   const { name, email, password, notes = [] } = req.body
 
   try {
-    const user = await new User({
-      name,
-      email,
-      password: bcrypt.hashSync(password),
-      notes,
-    }).save()
+    const [user] = (await users.insertOne({ name, email, password: bcrypt.hashSync(password), notes })).ops
 
-    console.log(`${user.name}  registered`)
+    console.log(`${user.name} registered`)
 
     const refreshTokenID = await generateRefreshToken(user._id)
 
@@ -33,7 +29,7 @@ export const loginUser = async (req, res) => {
   const { email, password } = req.body
 
   try {
-    const user = await User.findOne({ email: email.toLowerCase() })
+    const user = await users.findOne({ email: email.toLowerCase() })
 
     if (user) {
       const { _id: userID, password: hashedPassword, name, notes } = user
@@ -41,7 +37,7 @@ export const loginUser = async (req, res) => {
       const match = await bcrypt.compare(password, hashedPassword)
 
       if (match) {
-        let { _id: refreshTokenID } = (await Token.findOne({ userID })) || {}
+        let { _id: refreshTokenID } = (await tokens.findOne({ userID })) || {}
 
         if (!refreshTokenID) {
           refreshTokenID = await generateRefreshToken(userID)
@@ -57,18 +53,20 @@ export const loginUser = async (req, res) => {
     } else {
       res.status(404).send('No such user')
     }
-  } catch ({ message, errmsg }) {
-    console.error(`Error: ${message || errmsg}`)
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
   }
 }
 
 export const updateUser = async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.userID, { name: req.body.name })
+    await users.updateOne({ _id: ObjectID(req.userID) }, { $set: { name: req.body.name } })
 
     res.send()
-  } catch ({ message, errmsg }) {
-    console.error(`Error: ${message || errmsg}`)
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
   }
 }
 
@@ -79,30 +77,29 @@ export const changePassword = async (req, res) => {
   } = req
 
   try {
-    const user = await User.findById(userID)
+    const user = await users.findOne({ _id: ObjectID(userID) })
 
     if (user) {
       const match = await bcrypt.compare(password, user.password)
 
       if (match) {
-        user.password = bcrypt.hashSync(newPassword)
-
-        await user.save()
-        await Token.findOneAndDelete({ userID })
+        await users.updateOne({ _id: ObjectID(userID) }, { $set: { password: bcrypt.hashSync(newPassword) } })
+        tokens.deleteOne({ userID: ObjectID(userID) })
 
         const refreshTokenID = await generateRefreshToken(userID)
 
         generateAccessToken(res, userID, refreshTokenID)
 
-        res.send()
+        res.sendStatus(200)
       } else {
         res.status(404).send('Incorrect password')
       }
     } else {
       res.sendStatus(404)
     }
-  } catch ({ message, errmsg }) {
-    console.error(`Error: ${message || errmsg}`)
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
   }
 }
 

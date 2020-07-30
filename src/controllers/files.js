@@ -1,19 +1,21 @@
-import File from '../models/File.js'
+import mongodb from 'mongodb'
+
+import { files } from '../database.js'
+
+const { ObjectID } = mongodb
 
 export const getFile = async (req, res) => {
-  if (!req.userID) return res.status(404).send()
-
   try {
-    const file = await File.findOne({ noteID: req.body.noteID })
+    const {
+      mimetype,
+      buffer: { buffer },
+    } = await files.findOne({ noteID: ObjectID(req.body.noteID) })
 
-    if (file) {
-      const { mimetype, buffer } = file
-
-      res.setHeader('Content-Type', mimetype)
-      res.setHeader('Content-Disposition', 'attachment')
-      res.send(buffer)
-    }
-  } catch ({ message, errmsg }) {
-    console.error(`Error: ${message || errmsg}`)
+    res.setHeader('Content-Type', mimetype)
+    res.setHeader('Content-Disposition', 'attachment')
+    res.send(buffer)
+  } catch (err) {
+    console.error(err)
+    res.sendStatus(500)
   }
 }

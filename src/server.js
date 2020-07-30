@@ -23,7 +23,16 @@ if (cluster.isMaster && NODE_ENV == 'production') {
 
   setInterval(() => https.get(SERVER_URL), 900000) // keep Heroku app awake
 } else {
-  import('./app.js').then(({ default: app }) => {
+  import('./database.js').then(async ({ connect }) => {
+    try {
+      await connect()
+    } catch (err) {
+      console.error(err)
+      process.exit(1)
+    }
+
+    const { default: app } = await import('./app.js')
+
     app.listen(PORT, () => console.log(`[Worker ${process.pid}] Listening on port ${PORT}...`))
   })
 }

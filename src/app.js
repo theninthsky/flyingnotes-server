@@ -1,5 +1,4 @@
 import { createServer } from 'http'
-import mongoose from 'mongoose'
 
 import { patchRequest, patchResponse } from './patch.js'
 import auth from './auth.js'
@@ -7,21 +6,7 @@ import * as userController from './controllers/user.js'
 import * as notesController from './controllers/notes.js'
 import * as filesController from './controllers/files.js'
 
-const { NODE_ENV, MONGODB_URI = 'mongodb://localhost/main', CLIENT_URL = 'http://localhost:3000' } = process.env
-
-export const mongooseOpts = {
-  useNewUrlParser: true,
-  useFindAndModify: false,
-  useCreateIndex: true,
-  useUnifiedTopology: true,
-}
-
-if (NODE_ENV != 'test') {
-  mongoose
-    .connect(MONGODB_URI, mongooseOpts)
-    .then(() => console.log(`[Worker ${process.pid}] MongoDB is connected...`))
-    .catch(({ message }) => console.error(`Error: ${message}`))
-}
+const { CLIENT_URL = 'http://localhost:3000' } = process.env
 
 const publicRouter = {
   POST: {

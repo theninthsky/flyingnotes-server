@@ -22,7 +22,7 @@
     "dotenv": "^8.2.0",
     "fast-json-stable-stringify": "^2.1.0",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.9.25"
+    "mongodb": "^3.5.9"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
