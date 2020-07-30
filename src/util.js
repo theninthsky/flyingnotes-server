@@ -49,7 +49,7 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   })
 
-  res.headers['Set-Cookie'] = `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; Same-Site=None; ${
+  res.headers['Set-Cookie'] = `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None; ${
     isProduction ? 'Secure' : ''
   }`
 }
