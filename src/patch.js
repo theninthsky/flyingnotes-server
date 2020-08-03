@@ -66,7 +66,7 @@ export const patchResponse = (req, res) => {
     res
       .writeHead(res.statusCode || 200, {
         ...res.headers,
-        ...corsHeaders(req.headers.origin),
+        ...corsHeaders(),
         'Content-Type': 'application/json',
       })
       .end(stringify(body))

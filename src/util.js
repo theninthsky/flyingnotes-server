@@ -5,6 +5,7 @@ import { tokens } from './database.js'
 
 const {
   NODE_ENV,
+  CLIENT_URL = 'http://localhost:3000',
   ACCESS_TOKEN_SECRET,
   ACCESS_TOKEN_EXPIRES_IN = 60 * 10,
   REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3,
@@ -14,8 +15,8 @@ const { ObjectID } = mongodb
 const COOKIE_EXPIRES_IN = 3600 * 24 * 30 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
 const isProduction = NODE_ENV == 'production'
 
-export const corsHeaders = origin => ({
-  'Access-Control-Allow-Origin': origin || '*',
+export const corsHeaders = () => ({
+  'Access-Control-Allow-Origin': CLIENT_URL,
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
