@@ -1,12 +1,11 @@
-import mongoose from 'mongoose'
+import mongodb from 'mongodb'
 import mongoDBMemoryServer from 'mongodb-memory-server'
-
-import { mongooseOpts } from '../../src/app.js'
 
 const { MongoMemoryServer } = mongoDBMemoryServer
 
 export default async () => {
   const mongoURI = await new MongoMemoryServer().getUri()
+  const client = new mongodb.MongoClient(mongoURI, { useUnifiedTopology: true, ignoreUndefined: true })
 
-  return mongoose.connect(mongoURI, mongooseOpts)
+  return client.connect()
 }

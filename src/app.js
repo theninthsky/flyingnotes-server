@@ -41,7 +41,8 @@ export default createServer(async (req, res) => {
   await auth(req, res)
 
   if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
-  if (!req.userID) return publicRouter[req.method][req.url](req, res)
+  if (req.userID && privateRouter[req.method][req.url]) return privateRouter[req.method][req.url](req, res)
+  if (publicRouter[req.method][req.url]) return publicRouter[req.method][req.url](req, res)
 
-  privateRouter[req.method][req.url](req, res)
+  res.sendStatus(404)
 })
