@@ -1,6 +1,6 @@
 import mongodb from 'mongodb'
 
-import { users, files } from '../database.js'
+import { users } from '../database.js'
 
 const { ObjectID } = mongodb
 
@@ -17,8 +17,7 @@ export const getNotes = async (req, res) => {
 
 export const createNote = async (req, res) => {
   const {
-    body: { color, category, title, content },
-    file,
+    body: { category, title, content },
   } = req
 
   try {
@@ -29,11 +28,9 @@ export const createNote = async (req, res) => {
           $push: {
             notes: {
               _id: ObjectID(),
-              color,
               category,
               title,
               content,
-              fileName: file && file.name,
               date: new Date(),
             },
           },
@@ -41,16 +38,6 @@ export const createNote = async (req, res) => {
         { projection: { notes: { $slice: -1 } }, returnOriginal: false },
       )
     ).value.notes
-
-    if (file) {
-      const { mimetype, buffer } = file
-
-      await files.insertOne({
-        noteID: newNote._id,
-        mimetype,
-        buffer,
-      })
-    }
 
     res.status(201).json({ newNote })
   } catch (err) {
@@ -62,8 +49,7 @@ export const createNote = async (req, res) => {
 export const updateNote = async (req, res) => {
   const {
     userID,
-    body: { _id: noteID, color, category, title, content },
-    file,
+    body: { _id: noteID, category, title, content },
   } = req
 
   try {
@@ -74,11 +60,9 @@ export const updateNote = async (req, res) => {
           $set: {
             'notes.$': {
               _id: ObjectID(noteID),
-              color,
               category,
               title,
               content,
-              fileName: file && file.name,
               date: new Date(),
             },
           },
@@ -86,16 +70,6 @@ export const updateNote = async (req, res) => {
         { projection: { notes: { $elemMatch: { _id: ObjectID(noteID) } } }, returnOriginal: false },
       )
     ).value.notes
-
-    if (file) {
-      const { mimetype, buffer } = file
-
-      await files.findOneAndReplace(
-        { noteID: ObjectID(noteID) },
-        { noteID: ObjectID(updatedNote._id), mimetype, buffer },
-        { upsert: true },
-      )
-    }
 
     res.json({ updatedNote })
   } catch (err) {
@@ -111,10 +85,7 @@ export const deleteNote = async (req, res) => {
   } = req
 
   try {
-    await Promise.all([
-      users.updateOne({ _id: ObjectID(userID) }, { $pull: { notes: { _id: ObjectID(noteID) } } }),
-      files.deleteOne({ noteID: ObjectID(noteID) }),
-    ])
+    await users.updateOne({ _id: ObjectID(userID) }, { $pull: { notes: { _id: ObjectID(noteID) } } })
 
     res.sendStatus(204)
   } catch (err) {

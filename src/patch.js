@@ -18,7 +18,7 @@ export const patchRequest = async req => {
         const data = []
 
         file.on('data', chunk => data.push(chunk))
-        file.on('end', () => (req.file = { name, mimetype, buffer: Buffer.concat(data) }))
+        file.on('end', () => (req.file = { mimetype, buffer: Buffer.concat(data) }))
       })
 
       busboy.on('field', (fieldName, val) => (req.body[fieldName] = val))

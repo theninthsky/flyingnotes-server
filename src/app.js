@@ -8,29 +8,48 @@ import * as filesController from './controllers/files.js'
 
 const { CLIENT_URL = 'http://localhost:3000' } = process.env
 
-const publicRouter = {
+const httpMethods = {
+  GET: {},
+  HEAD: {},
+  POST: {},
+  PUT: {},
+  DELETE: {},
+  CONNECT: {},
+  TRACE: {},
+  PATCH: {},
+}
+
+const publicRoutes = {
+  ...httpMethods,
   POST: {
     '/register': userController.registerUser,
     '/login': userController.loginUser,
   },
 }
 
-const privateRouter = {
-  GET: { '/notes': notesController.getNotes },
+const privateRoutes = {
+  ...httpMethods,
+  GET: {
+    '/notes': notesController.getNotes,
+    '/files': filesController.getFiles,
+  },
   POST: {
     '/register': userController.registerUser,
     '/login': userController.loginUser,
     '/logout': userController.logoutUser,
     '/notes': notesController.createNote,
-    '/file': filesController.getFile,
+    '/files': filesController.uploadFile,
+    '/file': filesController.downloadFile,
   },
   PUT: {
     '/update': userController.updateUser,
     '/register': userController.changePassword,
     '/notes': notesController.updateNote,
   },
-  DELETE: { '/notes': notesController.deleteNote },
+  DELETE: { '/notes': notesController.deleteNote, '/file': filesController.deleteFile },
 }
+
+const defaultRoute = (_, res) => res.sendStatus(404)
 
 export default createServer(async (req, res) => {
   patchResponse(req, res)
@@ -41,8 +60,7 @@ export default createServer(async (req, res) => {
   await auth(req, res)
 
   if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
-  if (req.userID && privateRouter[req.method][req.url]) return privateRouter[req.method][req.url](req, res)
-  if (publicRouter[req.method][req.url]) return publicRouter[req.method][req.url](req, res)
 
-  res.sendStatus(404)
+  if (req.userID) (privateRoutes[req.method][req.url] || defaultRoute)(req, res)
+  else (publicRoutes[req.method][req.url] || defaultRoute)(req, res)
 })
