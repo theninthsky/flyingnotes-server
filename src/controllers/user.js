@@ -11,7 +11,9 @@ export const registerUser = async (req, res) => {
   const { name, email, password, notes = [] } = req.body
 
   try {
-    const [user] = (await users.insertOne({ name, email, password: bcrypt.hashSync(password), notes })).ops
+    const {
+      ops: [user],
+    } = await users.insertOne({ name, email, password: bcrypt.hashSync(password), notes })
 
     console.log(`${user.name} registered`)
 
@@ -55,6 +57,7 @@ export const loginUser = async (req, res) => {
     }
   } catch (err) {
     console.error(err)
+
     res.sendStatus(500)
   }
 }
@@ -63,9 +66,10 @@ export const updateUser = async (req, res) => {
   try {
     await users.updateOne({ _id: ObjectID(req.userID) }, { $set: { name: req.body.name } })
 
-    res.send()
+    res.sendStatus(200)
   } catch (err) {
     console.error(err)
+
     res.sendStatus(500)
   }
 }
@@ -99,6 +103,7 @@ export const changePassword = async (req, res) => {
     }
   } catch (err) {
     console.error(err)
+
     res.sendStatus(500)
   }
 }

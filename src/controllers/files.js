@@ -13,6 +13,7 @@ export const getFiles = async (req, res) => {
     res.json({ files: allFiles })
   } catch (err) {
     console.error(err)
+
     res.sendStatus(500)
   }
 }
@@ -27,20 +28,20 @@ export const uploadFile = async (req, res) => {
   if (!buffer) return res.sendStatus(404)
 
   try {
-    const [newFile] = (
-      await files.insertOne(
-        {
-          userID: ObjectID(userID),
-          category,
-          name,
-          extension,
-          mimetype,
-          buffer,
-          date: new Date(),
-        },
-        /*{ projection: { userID: 0, mimetype: 0, buffer: 0 } } has no effect */
-      )
-    ).ops
+    const {
+      ops: [newFile],
+    } = await files.insertOne(
+      {
+        userID: ObjectID(userID),
+        category,
+        name,
+        extension,
+        mimetype,
+        buffer,
+        date: new Date(),
+      },
+      /*{ projection: { userID: 0, mimetype: 0, buffer: 0 } } has no effect */
+    )
 
     delete newFile.userID
     delete newFile.mimetype
@@ -49,6 +50,7 @@ export const uploadFile = async (req, res) => {
     res.status(201).json({ newFile })
   } catch (err) {
     console.log(err)
+
     res.sendStatus(500)
   }
 }
