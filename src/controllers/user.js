@@ -1,11 +1,12 @@
-import bcrypt from 'bcryptjs'
 import mongodb from 'mongodb'
+import bcrypt from 'bcrypt'
 
 import { users, tokens } from '../database.js'
 import { generateRefreshToken, updateRefreshToken, generateAccessToken } from '../util.js'
 
 const { CLIENT_URL = 'http://localhost:3000' } = process.env
 const { ObjectID } = mongodb
+const SALT_ROUNDS = 10
 
 export const registerUser = async (req, res) => {
   const { name, email, password, notes = [] } = req.body
@@ -13,7 +14,7 @@ export const registerUser = async (req, res) => {
   try {
     const {
       ops: [user],
-    } = await users.insertOne({ name, email, password: bcrypt.hashSync(password), notes })
+    } = await users.insertOne({ name, email, password: await bcrypt.hash(password, SALT_ROUNDS), notes })
 
     console.log(`${user.name} registered`)
 
@@ -33,28 +34,19 @@ export const loginUser = async (req, res) => {
   try {
     const user = await users.findOne({ email: email.toLowerCase() })
 
-    if (user) {
-      const { _id: userID, password: hashedPassword, name, notes } = user
+    if (!user) return res.status(404).send('No such user')
 
-      const match = await bcrypt.compare(password, hashedPassword)
+    const { _id: userID, password: hashedPassword, name, notes } = user
+    const match = await bcrypt.compare(password, hashedPassword)
 
-      if (match) {
-        let { _id: refreshTokenID } = (await tokens.findOne({ userID })) || {}
+    if (!match) return res.status(404).send('Incorrect email or password')
 
-        if (!refreshTokenID) {
-          refreshTokenID = await generateRefreshToken(userID)
-        }
+    let { _id: refreshTokenID = await generateRefreshToken(userID) } = (await tokens.findOne({ userID })) || {}
 
-        generateAccessToken(res, userID, refreshTokenID)
-        updateRefreshToken(refreshTokenID)
+    generateAccessToken(res, userID, refreshTokenID)
+    updateRefreshToken(refreshTokenID)
 
-        res.json({ name, notes })
-      } else {
-        res.status(404).send('Incorrect email or password')
-      }
-    } else {
-      res.status(404).send('No such user')
-    }
+    res.json({ name, notes })
   } catch (err) {
     console.error(err)
 
@@ -83,24 +75,23 @@ export const changePassword = async (req, res) => {
   try {
     const user = await users.findOne({ _id: ObjectID(userID) })
 
-    if (user) {
-      const match = await bcrypt.compare(password, user.password)
+    if (!user) return res.status(404).send('Incorrect password')
 
-      if (match) {
-        await users.updateOne({ _id: ObjectID(userID) }, { $set: { password: bcrypt.hashSync(newPassword) } })
-        tokens.deleteOne({ userID: ObjectID(userID) })
+    const match = await bcrypt.compare(password, user.password)
 
-        const refreshTokenID = await generateRefreshToken(userID)
+    if (!match) return res.sendStatus(404)
 
-        generateAccessToken(res, userID, refreshTokenID)
+    await users.updateOne(
+      { _id: ObjectID(userID) },
+      { $set: { password: await bcrypt.hash(newPassword, SALT_ROUNDS) } },
+    )
+    tokens.deleteOne({ userID: ObjectID(userID) })
 
-        res.sendStatus(200)
-      } else {
-        res.status(404).send('Incorrect password')
-      }
-    } else {
-      res.sendStatus(404)
-    }
+    const refreshTokenID = await generateRefreshToken(userID)
+
+    generateAccessToken(res, userID, refreshTokenID)
+
+    res.sendStatus(200)
   } catch (err) {
     console.error(err)
 
