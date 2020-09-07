@@ -1,6 +1,6 @@
 import uWS from 'uWebSockets.js'
 
-import { patchRequest, patchResponse } from './patch.js'
+import { patchRequest, patchResponse, patchPayload } from './patch.js'
 import auth from './auth.js'
 import * as userController from './controllers/user.js'
 import * as notesController from './controllers/notes.js'
@@ -43,12 +43,12 @@ export default uWS.App().any('/*', async (res, req) => {
     res.aborted = true
   })
 
-  req.origin = req.getHeader('origin')
+  patchRequest(req)
   patchResponse(req, res)
 
-  if (req.getMethod() == 'options') return res.sendStatus(204)
+  if (req.method == 'options') return res.sendStatus(204)
 
-  await patchRequest(req, res)
+  await patchPayload(req, res)
   await auth(req, res)
 
   if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })

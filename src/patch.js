@@ -4,31 +4,11 @@ import { corsHeaders } from './util.js'
 
 const isProduction = process.env.NODE_ENV == 'production'
 
-export const patchRequest = async (req, res) => {
-  await new Promise(resolve => {
-    req.url = req.getUrl()
-    req.method = req.getMethod()
-    req.headers = {}
-    req.forEach(header => (req.headers[header] = req.getHeader(header)))
-
-    const { 'content-type': contentType = '' } = req.headers
-
-    // if (contentType.includes('multipart/form-data'))
-
-    const buffer = []
-
-    res.onData((chunk, isLast) => {
-      buffer.push(Buffer.from(chunk))
-
-      if (isLast) {
-        const payload = buffer.toString()
-
-        req.body = contentType.includes('application/json') ? JSON.parse(payload) : payload
-
-        resolve()
-      }
-    })
-  })
+export const patchRequest = req => {
+  req.url = req.getUrl()
+  req.method = req.getMethod()
+  req.headers = {}
+  req.forEach(header => (req.headers[header] = req.getHeader(header)))
 }
 
 export const patchResponse = (req, res) => {
@@ -52,7 +32,7 @@ export const patchResponse = (req, res) => {
   res.send = body => {
     res.writeStatus(`${res.statusCode || 200}`)
 
-    const headers = { ...res.headers, ...corsHeaders(req.origin) }
+    const headers = { ...res.headers, ...corsHeaders(req.headers.origin) }
 
     for (const header in headers) res.writeHeader(header, headers[header])
 
@@ -69,4 +49,26 @@ export const patchResponse = (req, res) => {
 
     res.send()
   }
+}
+
+export const patchPayload = async (req, res) => {
+  await new Promise(resolve => {
+    const { 'content-type': contentType = '' } = req.headers
+
+    // if (contentType.includes('multipart/form-data'))
+
+    const buffer = []
+
+    res.onData((chunk, isLast) => {
+      buffer.push(Buffer.from(chunk))
+
+      if (isLast) {
+        const payload = buffer.toString()
+
+        req.body = contentType.includes('application/json') ? JSON.parse(payload) : payload
+
+        resolve()
+      }
+    })
+  })
 }
