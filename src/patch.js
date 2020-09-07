@@ -1,47 +1,33 @@
-import Busboy from 'busboy'
 import stringify from 'fast-json-stable-stringify'
 
 import { corsHeaders } from './util.js'
 
 const isProduction = process.env.NODE_ENV == 'production'
 
-export const patchRequest = async req => {
+export const patchRequest = async (req, res) => {
   await new Promise(resolve => {
+    req.url = req.getUrl()
+    req.method = req.getMethod()
+    req.headers = {}
+    req.forEach(header => (req.headers[header] = req.getHeader(header)))
+
     const { 'content-type': contentType = '' } = req.headers
 
-    if (contentType.includes('multipart/form-data')) {
-      const busboy = new Busboy({ headers: req.headers })
+    // if (contentType.includes('multipart/form-data'))
 
-      req.body = {}
+    const buffer = []
 
-      busboy.on('file', (fieldName, file, name, encoding, mimetype) => {
-        const data = []
+    res.onData((chunk, isLast) => {
+      buffer.push(Buffer.from(chunk))
 
-        file.on('data', chunk => data.push(chunk))
-        file.on('end', () => (req.file = { mimetype, buffer: Buffer.concat(data) }))
-      })
+      if (isLast) {
+        const payload = buffer.toString()
 
-      busboy.on('field', (fieldName, val) => (req.body[fieldName] = val))
-      busboy.on('finish', () => resolve())
-
-      req.pipe(busboy)
-    } else {
-      let payload = ''
-
-      req.on('data', chunk => {
-        payload += chunk.toString()
-      })
-
-      req.on('end', () => {
-        try {
-          req.body = contentType.includes('application/json') ? JSON.parse(payload || '{}') : payload
-        } catch ({ message }) {
-          console.error(`Error: ${message}`)
-        }
+        req.body = contentType.includes('application/json') ? JSON.parse(payload) : payload
 
         resolve()
-      })
-    }
+      }
+    })
   })
 }
 
@@ -58,18 +44,19 @@ export const patchResponse = (req, res) => {
     res.status(code).send()
   }
 
-  res.send = body => {
-    res.writeHead(res.statusCode || 200, { ...res.headers, ...corsHeaders(req.headers.origin) }).end(body)
+  res.json = body => {
+    res.headers['Content-Type'] = 'application/json'
+    res.send(stringify(body))
   }
 
-  res.json = body => {
-    res
-      .writeHead(res.statusCode || 200, {
-        ...res.headers,
-        ...corsHeaders(),
-        'Content-Type': 'application/json',
-      })
-      .end(stringify(body))
+  res.send = body => {
+    res.writeStatus(`${res.statusCode || 200}`)
+
+    const headers = { ...res.headers, ...corsHeaders(req.origin) }
+
+    for (const header in headers) res.writeHeader(header, headers[header])
+
+    res.cork(() => res.end(body))
   }
 
   res.redirect = (url, { clearCookie } = {}) => {

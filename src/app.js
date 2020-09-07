@@ -1,4 +1,4 @@
-import { createServer } from 'http'
+import uWS from 'uWebSockets.js'
 
 import { patchRequest, patchResponse } from './patch.js'
 import auth from './auth.js'
@@ -8,32 +8,19 @@ import * as filesController from './controllers/files.js'
 
 const { CLIENT_URL = 'http://localhost:3000' } = process.env
 
-const httpMethods = {
-  GET: {},
-  HEAD: {},
-  POST: {},
-  PUT: {},
-  DELETE: {},
-  CONNECT: {},
-  TRACE: {},
-  PATCH: {},
-}
-
 const publicRoutes = {
-  ...httpMethods,
-  POST: {
+  post: {
     '/register': userController.registerUser,
     '/login': userController.loginUser,
   },
 }
 
 const privateRoutes = {
-  ...httpMethods,
-  GET: {
+  get: {
     '/notes': notesController.getNotes,
     '/files': filesController.getFiles,
   },
-  POST: {
+  post: {
     '/register': userController.registerUser,
     '/login': userController.loginUser,
     '/logout': userController.logoutUser,
@@ -41,26 +28,30 @@ const privateRoutes = {
     '/files': filesController.uploadFile,
     '/file': filesController.downloadFile,
   },
-  PUT: {
+  put: {
     '/update': userController.updateUser,
     '/register': userController.changePassword,
     '/notes': notesController.updateNote,
   },
-  DELETE: { '/notes': notesController.deleteNote, '/file': filesController.deleteFile },
+  delete: { '/notes': notesController.deleteNote, '/file': filesController.deleteFile },
 }
 
 const defaultRoute = (_, res) => res.sendStatus(404)
 
-export default createServer(async (req, res) => {
+export default uWS.App().any('/*', async (res, req) => {
+  res.onAborted(() => {
+    res.aborted = true
+  })
+
+  req.origin = req.getHeader('origin')
   patchResponse(req, res)
 
-  if (req.method == 'OPTIONS') return res.sendStatus(204)
+  if (req.getMethod() == 'options') return res.sendStatus(204)
 
-  await patchRequest(req)
+  await patchRequest(req, res)
   await auth(req, res)
 
   if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
-
   if (req.userID) (privateRoutes[req.method][req.url] || defaultRoute)(req, res)
   else (publicRoutes[req.method][req.url] || defaultRoute)(req, res)
 })
