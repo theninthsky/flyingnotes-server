@@ -33,7 +33,7 @@ if (cluster.isMaster && NODE_ENV == 'production') {
 
     const { default: app } = await import('./app.js')
 
-    app.listen(PORT, token =>
+    app.listen(+PORT, token =>
       console.log(`[Worker ${process.pid}] ${token ? 'Listening on port' : 'Failed to listen to port'} ${PORT}...`),
     )
   })
