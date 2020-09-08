@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken'
 import mongodb from 'mongodb'
+import jwt from 'jsonwebtoken'
 
 import { tokens } from './database.js'
 
