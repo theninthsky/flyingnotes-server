@@ -41,7 +41,7 @@ export const loginUser = async (req, res) => {
 
     if (!match) return res.status(404).send('Incorrect email or password')
 
-    let { _id: refreshTokenID = await generateRefreshToken(userID) } = (await tokens.findOne({ userID })) || {}
+    const { _id: refreshTokenID = await generateRefreshToken(userID) } = (await tokens.findOne({ userID })) || {}
 
     generateAccessToken(res, userID, refreshTokenID)
     updateRefreshToken(refreshTokenID)

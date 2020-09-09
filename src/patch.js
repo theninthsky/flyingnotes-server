@@ -43,7 +43,7 @@ export const patchResponse = (req, res) => {
     res.headers.Location = url
 
     if (clearCookie)
-      res.headers['Set-Cookie'] = `Bearer=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=None ${
+      res.headers['Set-Cookie'] = `Bearer=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=None${
         isProduction ? '; Secure' : ''
       }`
 
@@ -51,8 +51,8 @@ export const patchResponse = (req, res) => {
   }
 }
 
-export const patchPayload = async (req, res) => {
-  await new Promise(resolve => {
+export const patchPayload = (req, res) => {
+  return new Promise(resolve => {
     const { 'content-type': contentType = '' } = req.headers
 
     // if (contentType.includes('multipart/form-data'))

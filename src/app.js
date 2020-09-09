@@ -52,10 +52,9 @@ export default uWS.App().any('/*', async (res, req) => {
   await auth(req, res)
 
   if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
-
-  if (req.userID) {
-    ;(privateRoutes[req.method] ? privateRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
-  } else {
-    ;(publicRoutes[req.method] ? publicRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
+  if (!req.userID) {
+    return (publicRoutes[req.method] ? publicRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
   }
+
+  ;(privateRoutes[req.method] ? privateRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
 })
