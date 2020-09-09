@@ -65,6 +65,8 @@ export const patchPayload = (req, res) => {
       if (isLast) {
         const payload = buffer.toString()
 
+        console.log(payload)
+
         req.body = contentType.includes('application/json') ? JSON.parse(payload) : payload
 
         resolve()
