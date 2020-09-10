@@ -55,19 +55,21 @@ export const patchPayload = (req, res) => {
   return new Promise(resolve => {
     const { 'content-type': contentType = '' } = req.headers
 
-    // if (contentType.includes('multipart/form-data'))
-
-    const buffer = []
+    let buffer
 
     res.onData((chunk, isLast) => {
-      buffer.push(Buffer.from(chunk))
+      const curBuf = Buffer.from(chunk)
+
+      buffer = buffer ? Buffer.concat([buffer, curBuf]) : isLast ? curBuf : Buffer.concat([curBuf])
 
       if (isLast) {
         const payload = buffer.toString()
 
-        console.log(payload)
-
-        req.body = contentType.includes('application/json') ? JSON.parse(payload) : payload
+        try {
+          req.body = contentType.includes('application/json') ? JSON.parse(payload) : payload
+        } catch (err) {
+          req.body = {}
+        }
 
         resolve()
       }
