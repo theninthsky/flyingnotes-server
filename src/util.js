@@ -15,12 +15,12 @@ const { ObjectID } = mongodb
 const COOKIE_EXPIRES_IN = 3600 * 24 * 30 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
 const isProduction = NODE_ENV == 'production'
 
-export const corsHeaders = () => ({
+export const corsHeaders = {
   'Access-Control-Allow-Origin': CLIENT_URL,
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
-})
+}
 
 export const generateRefreshToken = async userID => {
   const date = new Date()
@@ -50,7 +50,8 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   })
 
-  res.headers['Set-Cookie'] = `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None${
-    isProduction ? '; Secure' : ''
-  }`
+  res.header(
+    'Set-Cookie',
+    `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None${isProduction ? '; Secure' : ''}`,
+  )
 }

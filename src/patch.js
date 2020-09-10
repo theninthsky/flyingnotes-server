@@ -11,8 +11,10 @@ export const patchRequest = req => {
   req.forEach(header => (req.headers[header] = req.getHeader(header)))
 }
 
-export const patchResponse = (req, res) => {
+export const patchResponse = res => {
   res.headers = {}
+
+  res.header = (field, value) => (res.headers[field] = value)
 
   res.status = code => {
     res.statusCode = code
@@ -25,14 +27,14 @@ export const patchResponse = (req, res) => {
   }
 
   res.json = body => {
-    res.headers['Content-Type'] = 'application/json'
+    res.header('Content-Type', 'application/json')
     res.send(stringify(body))
   }
 
   res.send = body => {
     res.writeStatus(`${res.statusCode || 200}`)
 
-    const headers = { ...res.headers, ...corsHeaders(req.headers.origin) }
+    const headers = { ...res.headers, ...corsHeaders }
 
     for (const header in headers) res.writeHeader(header, headers[header])
 
@@ -40,18 +42,21 @@ export const patchResponse = (req, res) => {
   }
 
   res.redirect = (url, { clearCookie } = {}) => {
-    res.headers.Location = url
+    res.header('Location', url)
 
     if (clearCookie)
-      res.headers['Set-Cookie'] = `Bearer=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=None${
-        isProduction ? '; Secure' : ''
-      }`
+      res.header(
+        'Set-Cookie',
+        `Bearer=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=None${
+          isProduction ? '; Secure' : ''
+        }`,
+      )
 
     res.send()
   }
 }
 
-export const patchPayload = (req, res) => {
+export const patchBody = (req, res) => {
   return new Promise(resolve => {
     const { 'content-type': contentType = '' } = req.headers
 

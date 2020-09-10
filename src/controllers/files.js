@@ -62,8 +62,8 @@ export const downloadFile = async (req, res) => {
       buffer: { buffer },
     } = await files.findOne({ _id: ObjectID(req.body.fileID), userID: ObjectID(req.userID) })
 
-    res.setHeader('Content-Type', mimetype)
-    res.setHeader('Content-Disposition', 'attachment')
+    res.header('Content-Type', mimetype)
+    res.header('Content-Disposition', 'attachment')
     res.send(buffer)
   } catch (err) {
     console.error(err)
