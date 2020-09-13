@@ -43,10 +43,11 @@ export default uWS.App().any('/*', async (res, req) => {
     res.aborted = true
   })
 
-  patchRequest(req)
   patchResponse(res)
 
-  if (req.method == 'options') return res.sendStatus(204)
+  if (req.getMethod() == 'options') return res.sendStatus(204)
+
+  patchRequest(req)
 
   await patchBody(req, res)
   await auth(req, res)
