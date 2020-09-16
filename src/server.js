@@ -1,20 +1,12 @@
-import os from 'os'
 import cluster from 'cluster'
 import https from 'https'
 
-const {
-  NODE_ENV,
-  WEB_CONCURRENCY: workers = os.cpus().length, // set by Heroku
-  PORT = 5000,
-  SERVER_URL = '',
-} = process.env
+const { PORT = 5000, SERVER_URL = '' } = process.env
 
-if (cluster.isMaster && NODE_ENV == 'production') {
+if (cluster.isMaster) {
   console.log(`Master is running...`)
 
-  for (let i = 0; i < workers; i++) {
-    cluster.fork()
-  }
+  cluster.fork()
 
   cluster.on('exit', worker => {
     console.log(`Worker ${worker.process.pid} died`)
