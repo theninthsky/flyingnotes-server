@@ -4,15 +4,15 @@ import { users } from '../database.js'
 
 const { ObjectID } = mongodb
 
-export const getNotes = async (req, res) => {
+export const getNotes = async (ws, body) => {
   try {
-    const { notes } = await users.findOne({ _id: ObjectID(req.userID) }, { projection: { notes: 1 } })
+    const { notes } = await users.findOne({ _id: ObjectID(body.userID) }, { projection: { notes: 1 } })
 
-    res.json({ notes })
+    ws.send(JSON.stringify({ notes }))
   } catch (err) {
     console.error(err)
 
-    res.sendStatus(500)
+    ws.send()
   }
 }
 

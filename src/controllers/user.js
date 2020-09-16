@@ -8,8 +8,8 @@ const { CLIENT_URL = 'http://localhost:3000' } = process.env
 const { ObjectID } = mongodb
 const SALT_ROUNDS = 10
 
-export const registerUser = async (req, res) => {
-  const { name, email, password, notes = [] } = req.body
+export const registerUser = async (ws, body) => {
+  const { name, email, password, notes = [] } = body
 
   try {
     const {
@@ -19,38 +19,38 @@ export const registerUser = async (req, res) => {
     console.log(`${user.name} registered`)
 
     const refreshTokenID = await generateRefreshToken(user._id)
+    const accessToken = generateAccessToken(user._id, refreshTokenID)
 
-    generateAccessToken(res, user._id, refreshTokenID)
-
-    res.status(201).json({ name: user.name, notes: user.notes })
+    ws.send(JSON.stringify({ accessToken, name: user.name, notes: user.notes }))
   } catch (err) {
-    res.status(409).send('This email address is already registered, try login instead')
+    ws.send('This email address is already registered, try login instead')
   }
 }
 
-export const loginUser = async (req, res) => {
-  const { email, password } = req.body
+export const loginUser = async (ws, body) => {
+  const { email, password } = body
 
   try {
     const user = await users.findOne({ email: email.toLowerCase() })
 
-    if (!user) return res.status(404).send('No such user')
+    if (!user) return ws.send('No such user')
 
     const { _id: userID, password: hashedPassword, name, notes } = user
     const match = await bcrypt.compare(password, hashedPassword)
 
-    if (!match) return res.status(404).send('Incorrect email or password')
+    if (!match) return ws.send('Incorrect email or password')
 
     const { _id: refreshTokenID = await generateRefreshToken(userID) } = (await tokens.findOne({ userID })) || {}
 
-    generateAccessToken(res, userID, refreshTokenID)
     updateRefreshToken(refreshTokenID)
 
-    res.json({ name, notes })
+    const accessToken = generateAccessToken(userID, refreshTokenID)
+
+    ws.send(JSON.stringify({ accessToken, name, notes }))
   } catch (err) {
     console.error(err)
 
-    res.sendStatus(500)
+    ws.send()
   }
 }
 

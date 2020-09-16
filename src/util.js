@@ -39,19 +39,12 @@ export const updateRefreshToken = refreshTokenID => {
   tokens.updateOne({ _id: ObjectID(refreshTokenID) }, { $set: { expiresIn: date.toISOString() } })
 }
 
-export const generateAccessToken = (res, userID, refreshTokenID) => {
+export const generateAccessToken = (userID, refreshTokenID) => {
   const payload = {
     iss: 'flyingnotes',
     userID,
     refreshTokenID,
   }
 
-  const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRES_IN,
-  })
-
-  res.header(
-    'Set-Cookie',
-    `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None${isProduction ? '; Secure' : ''}`,
-  )
+  return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN })
 }

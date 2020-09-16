@@ -1,4 +1,5 @@
 import uWS from 'uWebSockets.js'
+import { StringDecoder } from 'string_decoder'
 
 import { patchRequest, patchResponse, patchBody } from './patch.js'
 import auth from './auth.js'
@@ -7,6 +8,7 @@ import * as notesController from './controllers/notes.js'
 import * as filesController from './controllers/files.js'
 
 const { CLIENT_URL = 'http://localhost:3000' } = process.env
+const decoder = new StringDecoder('utf8')
 
 const publicRoutes = {
   post: {
@@ -38,24 +40,50 @@ const privateRoutes = {
 
 const defaultRoute = (_, res) => res.sendStatus(404)
 
-export default uWS.App().any('/*', async (res, req) => {
-  res.onAborted(() => {
-    res.aborted = true
+export default uWS
+  .App()
+  .any('/*', async (res, req) => {
+    res.onAborted(() => {})
+
+    patchResponse(res)
+
+    if (req.getMethod() == 'options') return res.sendStatus(204)
+
+    patchRequest(req)
+
+    await patchBody(req, res)
+    await auth(req, res)
+
+    if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
+    if (!req.userID) {
+      return (publicRoutes[req.method] ? publicRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
+    }
   })
+  .ws('/*', {
+    compression: uWS.SHARED_COMPRESSOR,
+    maxPayloadLength: 16 * 1024 * 1024,
+    idleTimeout: 0,
+    open: ws => {
+      console.log('A WebSocket connected!')
+    },
+    message: async (ws, message, isBinary) => {
+      const body = JSON.parse(decoder.write(Buffer.from(message)))
 
-  patchResponse(res)
+      // await auth(req, res)
 
-  if (req.getMethod() == 'options') return res.sendStatus(204)
-
-  patchRequest(req)
-
-  await patchBody(req, res)
-  await auth(req, res)
-
-  if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
-  if (!req.userID) {
-    return (publicRoutes[req.method] ? publicRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
-  }
-
-  ;(privateRoutes[req.method] ? privateRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
-})
+      switch (body.action) {
+        case 'register':
+          userController.registerUser(ws, body)
+        case 'login':
+          userController.loginUser(ws, body)
+        case 'getNotes':
+          notesController.getNotes(ws, body)
+      }
+    },
+    drain: ws => {
+      console.log('WebSocket backpressure: ' + ws.getBufferedAmount())
+    },
+    close: (ws, code, message) => {
+      console.log('WebSocket closed')
+    },
+  })
