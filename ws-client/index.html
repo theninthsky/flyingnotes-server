@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const ws = new WebSocket(
+        'ws://localhost:5000',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmbHlpbmdub3RlcyIsInVzZXJJRCI6IjVkYzlhM2FjOGVmZWY0MDJjZWRhNzNjOCIsInJlZnJlc2hUb2tlbklEIjoiNWY1NjgyNDJlMjk4ODgzMWQ0MWIwNWEwIiwiaWF0IjoxNjAwNDQwNjU4LCJleHAiOjE2MDA0NDEyNTh9.hLEA5m-FwKbLkhrKHkzFlNErUec_xI-zSrSOok793Ww',
+      )
+      ws.onopen = function (event) {
+        ws.send('{ "hi": "lol" }')
+      }
+    </script>
+  </body>
+</html>

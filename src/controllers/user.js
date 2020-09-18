@@ -4,12 +4,40 @@ import bcrypt from 'bcrypt'
 import { users, tokens } from '../database.js'
 import { generateRefreshToken, updateRefreshToken, generateAccessToken } from '../util.js'
 
-const { CLIENT_URL = 'http://localhost:3000' } = process.env
+const { ACCESS_TOKEN_SECRET, CLIENT_URL = 'http://localhost:3000' } = process.env
 const { ObjectID } = mongodb
 const SALT_ROUNDS = 10
 
-export const registerUser = async (ws, body) => {
-  const { name, email, password, notes = [] } = body
+export const getNewToken = async (req, res) => {
+  try {
+    const { cookie = '' } = req.headers
+    const [token] = cookie.match(/(?<=Bearer=)[\w.-]+/) || []
+
+    if (!token) throw Error()
+
+    const { userID, refreshTokenID, exp } = jwt.verify(token, ACCESS_TOKEN_SECRET, { ignoreExpiration: true })
+
+    if (Date.now() < exp * 1000) return res.json({ bearer: token })
+
+    const { expiresIn } = await tokens.findOne({ _id: ObjectID(refreshTokenID) })
+
+    if (new Date(expiresIn) < new Date()) {
+      tokens.deleteOne({ _id: ObjectID(refreshTokenID) })
+
+      throw Error()
+    }
+
+    generateAccessToken(res, userID, refreshTokenID)
+    updateRefreshToken(refreshTokenID)
+
+    res.json({ bearer: token })
+  } catch (err) {
+    res.status(401).redirect(CLIENT_URL, { clearCookie: true })
+  }
+}
+
+export const registerUser = async (req, res) => {
+  const { name, email, password, notes = [] } = req.body
 
   try {
     const {
@@ -19,38 +47,38 @@ export const registerUser = async (ws, body) => {
     console.log(`${user.name} registered`)
 
     const refreshTokenID = await generateRefreshToken(user._id)
-    const accessToken = generateAccessToken(user._id, refreshTokenID)
 
-    ws.send(JSON.stringify({ accessToken, name: user.name, notes: user.notes }))
+    generateAccessToken(res, user._id, refreshTokenID)
+
+    res.status(201).json({ name: user.name, notes: user.notes })
   } catch (err) {
-    ws.send('This email address is already registered, try login instead')
+    res.status(409).send('This email address is already registered, try login instead')
   }
 }
 
-export const loginUser = async (ws, body) => {
-  const { email, password } = body
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body
 
   try {
     const user = await users.findOne({ email: email.toLowerCase() })
 
-    if (!user) return ws.send('No such user')
+    if (!user) return res.status(404).send('No such user')
 
     const { _id: userID, password: hashedPassword, name, notes } = user
     const match = await bcrypt.compare(password, hashedPassword)
 
-    if (!match) return ws.send('Incorrect email or password')
+    if (!match) return res.status(404).send('Incorrect email or password')
 
     const { _id: refreshTokenID = await generateRefreshToken(userID) } = (await tokens.findOne({ userID })) || {}
 
+    generateAccessToken(res, userID, refreshTokenID)
     updateRefreshToken(refreshTokenID)
 
-    const accessToken = generateAccessToken(userID, refreshTokenID)
-
-    ws.send(JSON.stringify({ accessToken, name, notes }))
+    res.json({ name, notes })
   } catch (err) {
     console.error(err)
 
-    ws.send()
+    res.sendStatus(500)
   }
 }
 
