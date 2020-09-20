@@ -27,16 +27,17 @@ export const getNewToken = async (req, res) => {
       throw Error()
     }
 
-    generateAccessToken(res, userID, refreshTokenID)
+    const newToken = generateAccessToken(res, userID, refreshTokenID)
+
     updateRefreshToken(refreshTokenID)
 
-    res.json({ bearer: token })
+    res.json({ bearer: newToken })
   } catch (err) {
     res.status(401).redirect(CLIENT_URL, { clearCookie: true })
   }
 }
 
-export const registerUser = async (req, res) => {
+export const register = async (req, res) => {
   const { name, email, password, notes = [] } = req.body
 
   try {
@@ -48,15 +49,15 @@ export const registerUser = async (req, res) => {
 
     const refreshTokenID = await generateRefreshToken(user._id)
 
-    generateAccessToken(res, user._id, refreshTokenID)
+    const token = generateAccessToken(res, user._id, refreshTokenID)
 
-    res.status(201).json({ name: user.name, notes: user.notes })
+    res.status(201).json({ bearer: token, name: user.name, notes: user.notes })
   } catch (err) {
     res.status(409).send('This email address is already registered, try login instead')
   }
 }
 
-export const loginUser = async (req, res) => {
+export const login = async (req, res) => {
   const { email, password } = req.body
 
   try {
@@ -71,10 +72,11 @@ export const loginUser = async (req, res) => {
 
     const { _id: refreshTokenID = await generateRefreshToken(userID) } = (await tokens.findOne({ userID })) || {}
 
-    generateAccessToken(res, userID, refreshTokenID)
+    const token = generateAccessToken(res, userID, refreshTokenID)
+
     updateRefreshToken(refreshTokenID)
 
-    res.json({ name, notes })
+    res.json({ bearer: token, name, notes })
   } catch (err) {
     console.error(err)
 
@@ -82,32 +84,27 @@ export const loginUser = async (req, res) => {
   }
 }
 
-export const updateUser = async (req, res) => {
+export const updateUser = async (ws, { userID, name }) => {
   try {
-    await users.updateOne({ _id: ObjectID(req.userID) }, { $set: { name: req.body.name } })
+    await users.updateOne({ _id: ObjectID(userID) }, { $set: { name } })
 
-    res.sendStatus(200)
+    ws.json({ status: 'OK' })
   } catch (err) {
     console.error(err)
 
-    res.sendStatus(500)
+    ws.json({ status: 'FAIL' })
   }
 }
 
-export const changePassword = async (req, res) => {
-  const {
-    userID,
-    body: { password, newPassword },
-  } = req
-
+export const changePassword = async (ws, { userID, password, newPassword }) => {
   try {
     const user = await users.findOne({ _id: ObjectID(userID) })
 
-    if (!user) return res.status(404).send('Incorrect password')
+    if (!user) return ws.json({ error: 'Incorrect password' })
 
     const match = await bcrypt.compare(password, user.password)
 
-    if (!match) return res.sendStatus(404)
+    if (!match) return ws.json({ error: 'Not found' })
 
     await users.updateOne(
       { _id: ObjectID(userID) },
@@ -115,18 +112,14 @@ export const changePassword = async (req, res) => {
     )
     tokens.deleteOne({ userID: ObjectID(userID) })
 
-    const refreshTokenID = await generateRefreshToken(userID)
-
-    generateAccessToken(res, userID, refreshTokenID)
-
-    res.sendStatus(200)
+    ws.json({ status: 'OK' })
   } catch (err) {
     console.error(err)
 
-    res.sendStatus(500)
+    ws.json({ status: 'FAIL' })
   }
 }
 
-export const logoutUser = (_, res) => {
+export const logout = (_, res) => {
   res.status(204).redirect(CLIENT_URL, { clearCookie: true })
 }

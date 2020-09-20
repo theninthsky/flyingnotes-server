@@ -81,3 +81,7 @@ export const patchBody = (req, res) => {
     })
   })
 }
+
+export const patchWebsocket = ws => {
+  ws.json = message => ws.send(stringify(message))
+}

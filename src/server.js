@@ -1,32 +1,20 @@
-import cluster from 'cluster'
 import https from 'https'
 
 const { PORT = 5000, SERVER_URL = '' } = process.env
 
-if (cluster.isMaster) {
-  console.log(`Master is running...`)
+import('./database.js').then(async ({ connect }) => {
+  try {
+    await connect()
+  } catch (err) {
+    console.error(err)
+    process.exit(1)
+  }
 
-  cluster.fork()
+  const { default: app } = await import('./app.js')
 
-  cluster.on('exit', worker => {
-    console.log(`Worker ${worker.process.pid} died`)
-    cluster.fork()
-  })
+  app.listen(+PORT, token => console.log(`${token ? 'Listening on port' : 'Failed to listen to port'} ${PORT}...`))
+})
 
-  setInterval(() => https.get(SERVER_URL), 900000) // keep Heroku app awake
-} else {
-  import('./database.js').then(async ({ connect }) => {
-    try {
-      await connect()
-    } catch (err) {
-      console.error(err)
-      process.exit(1)
-    }
+setInterval(() => https.get(SERVER_URL), 900000) // keep Heroku app awake
 
-    const { default: app } = await import('./app.js')
-
-    app.listen(+PORT, token =>
-      console.log(`[Worker ${process.pid}] ${token ? 'Listening on port' : 'Failed to listen to port'} ${PORT}...`),
-    )
-  })
-}
+process.on('uncaughtException', err => console.log(err.stack))

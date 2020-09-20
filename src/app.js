@@ -2,41 +2,34 @@ import uWS from 'uWebSockets.js'
 import { StringDecoder } from 'string_decoder'
 import jwt from 'jsonwebtoken'
 
-import { patchRequest, patchResponse, patchBody } from './patch.js'
-import * as userController from './controllers/user.js'
-import * as notesController from './controllers/notes.js'
-import * as filesController from './controllers/files.js'
+import { patchRequest, patchResponse, patchBody, patchWebsocket } from './patch.js'
+import { getNewToken, register, login, updateUser, changePassword, logout } from './controllers/user.js'
+import { getNotes, addNote, updateNote, deleteNote } from './controllers/notes.js'
+import { getFiles, deleteFile } from './controllers/files.js'
 
 const { CLIENT_URL = 'http://localhost:3000', ACCESS_TOKEN_SECRET } = process.env
 const decoder = new StringDecoder('utf8')
 
 const publicRoutes = {
+  get: {
+    '/get-new-token': getNewToken,
+  },
   post: {
-    '/get-new-token': userController.getNewToken,
-    '/register': userController.registerUser,
-    '/login': userController.loginUser,
+    '/register': register,
+    '/login': login,
+    '/logout': logout,
   },
 }
 
-const privateRoutes = {
-  get: {
-    '/notes': notesController.getNotes,
-    '/files': filesController.getFiles,
-  },
-  post: {
-    '/register': userController.registerUser,
-    '/login': userController.loginUser,
-    '/logout': userController.logoutUser,
-    '/notes': notesController.createNote,
-    '/files': filesController.uploadFile,
-    '/file': filesController.downloadFile,
-  },
-  put: {
-    '/update': userController.updateUser,
-    '/register': userController.changePassword,
-    '/notes': notesController.updateNote,
-  },
-  delete: { '/notes': notesController.deleteNote, '/file': filesController.deleteFile },
+const websocketActions = {
+  updateUser,
+  changePassword,
+  getNotes,
+  addNote,
+  updateNote,
+  deleteNote,
+  getFiles,
+  deleteFile,
 }
 
 const defaultRoute = (_, res) => res.sendStatus(404)
@@ -79,14 +72,11 @@ export default uWS
       console.log('A WebSocket connected!')
     },
     message: async (ws, message, isBinary) => {
+      patchWebsocket(ws)
+
       const body = JSON.parse(decoder.write(Buffer.from(message)))
 
-      console.log(body)
-
-      switch (body.action) {
-        case 'getNotes':
-          notesController.getNotes(ws, body)
-      }
+      websocketActions[body.action](ws, body)
     },
     drain: ws => {
       console.log('WebSocket backpressure: ' + ws.getBufferedAmount())

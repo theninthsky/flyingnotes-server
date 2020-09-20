@@ -9,10 +9,15 @@
     <script>
       const ws = new WebSocket(
         'ws://localhost:5000',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmbHlpbmdub3RlcyIsInVzZXJJRCI6IjVkYzlhM2FjOGVmZWY0MDJjZWRhNzNjOCIsInJlZnJlc2hUb2tlbklEIjoiNWY1NjgyNDJlMjk4ODgzMWQ0MWIwNWEwIiwiaWF0IjoxNjAwNDQwNjU4LCJleHAiOjE2MDA0NDEyNTh9.hLEA5m-FwKbLkhrKHkzFlNErUec_xI-zSrSOok793Ww',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmbHlpbmdub3RlcyIsInVzZXJJRCI6IjVkYzlhM2FjOGVmZWY0MDJjZWRhNzNjOCIsInJlZnJlc2hUb2tlbklEIjoiNWY1NjgyNDJlMjk4ODgzMWQ0MWIwNWEwIiwiaWF0IjoxNjAwNjIyMDA4LCJleHAiOjE2MDA2ODIwMDh9.AS664QK2uCSz-ZHs6qcz6zThb3fJcxBbyAQ96PRUdCE',
       )
       ws.onopen = function (event) {
-        ws.send('{ "hi": "lol" }')
+        // ws.send('{ "action": "getNotes", "userID": "5dc9a3ac8efef402ceda73c8" }')
+        // ws.send('{ "action": "addNote", "userID": "5dc9a3ac8efef402ceda73c8", "content": "LOL!" }')
+        // ws.send(
+        //   '{ "action": "updateNote", "userID": "5dc9a3ac8efef402ceda73c8", "noteID": "5f67a2402822db0368521df7", "content": "LEL!!!" }',
+        // )
+        // ws.send('{ "action": "deleteNote", "userID": "5dc9a3ac8efef402ceda73c8", "noteID": "5f67a2402822db0368521df7"}')
       }
     </script>
   </body>
