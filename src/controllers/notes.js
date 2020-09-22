@@ -8,7 +8,7 @@ export const getNotes = async (ws, { userID }) => {
   try {
     const { notes } = await users.findOne({ _id: ObjectID(userID) }, { projection: { notes: 1 } })
 
-    ws.json({ notes })
+    ws.json({ type: 'getNotes', notes })
   } catch (err) {
     console.error(err)
 

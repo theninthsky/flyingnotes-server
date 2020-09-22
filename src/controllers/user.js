@@ -1,4 +1,5 @@
 import mongodb from 'mongodb'
+import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 
 import { users, tokens } from '../database.js'

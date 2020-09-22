@@ -7,7 +7,7 @@ import { getNewToken, register, login, updateUser, changePassword, logout } from
 import { getNotes, addNote, updateNote, deleteNote } from './controllers/notes.js'
 import { getFiles, deleteFile } from './controllers/files.js'
 
-const { CLIENT_URL = 'http://localhost:3000', ACCESS_TOKEN_SECRET } = process.env
+const { ACCESS_TOKEN_SECRET } = process.env
 const decoder = new StringDecoder('utf8')
 
 const publicRoutes = {
@@ -21,7 +21,7 @@ const publicRoutes = {
   },
 }
 
-const websocketActions = {
+const messageTypes = {
   updateUser,
   changePassword,
   getNotes,
@@ -31,8 +31,6 @@ const websocketActions = {
   getFiles,
   deleteFile,
 }
-
-const defaultRoute = (_, res) => res.sendStatus(404)
 
 export default uWS
   .App()
@@ -47,7 +45,11 @@ export default uWS
 
     await patchBody(req, res)
 
-    return (publicRoutes[req.method] ? publicRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
+    try {
+      publicRoutes[req.method][req.url](req, res)
+    } catch (err) {
+      res.sendStatus(404)
+    }
   })
   .ws('/*', {
     compression: uWS.SHARED_COMPRESSOR,
@@ -71,12 +73,11 @@ export default uWS
     open: ws => {
       console.log('A WebSocket connected!')
     },
-    message: async (ws, message, isBinary) => {
-      patchWebsocket(ws)
+    message: (ws, data, isBinary) => {
+      const message = JSON.parse(decoder.write(Buffer.from(data)))
 
-      const body = JSON.parse(decoder.write(Buffer.from(message)))
-
-      websocketActions[body.action](ws, body)
+      patchWebsocket(ws, message)
+      messageTypes[message.type](ws, message)
     },
     drain: ws => {
       console.log('WebSocket backpressure: ' + ws.getBufferedAmount())

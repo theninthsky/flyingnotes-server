@@ -82,6 +82,6 @@ export const patchBody = (req, res) => {
   })
 }
 
-export const patchWebsocket = ws => {
-  ws.json = message => ws.send(stringify(message))
+export const patchWebsocket = (ws, { type }) => {
+  ws.json = message => ws.send(stringify({ type, ...message }))
 }
