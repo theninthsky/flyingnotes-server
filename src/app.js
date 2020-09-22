@@ -2,7 +2,7 @@ import uWS from 'uWebSockets.js'
 import { StringDecoder } from 'string_decoder'
 import jwt from 'jsonwebtoken'
 
-import { patchRequest, patchResponse, patchBody, patchWebsocket } from './patch.js'
+import { patchRequest, patchBody, patchResponse, patchWebsocket } from './patch/index.js'
 import { getNewToken, register, login, updateUser, changePassword, logout } from './controllers/user.js'
 import { getNotes, addNote, updateNote, deleteNote } from './controllers/notes.js'
 import { getFiles, deleteFile } from './controllers/files.js'
