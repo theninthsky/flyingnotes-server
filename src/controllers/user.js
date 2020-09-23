@@ -18,7 +18,7 @@ export const getNewToken = async (req, res) => {
 
     const { userID, refreshTokenID, exp } = jwt.verify(token, ACCESS_TOKEN_SECRET, { ignoreExpiration: true })
 
-    if (Date.now() < exp * 1000) return res.json({ bearer: token })
+    if (Date.now() < exp * 1000) return res.json({ bearerToken: token, userID })
 
     const { expiresIn } = await tokens.findOne({ _id: ObjectID(refreshTokenID) })
 
@@ -32,7 +32,7 @@ export const getNewToken = async (req, res) => {
 
     updateRefreshToken(refreshTokenID)
 
-    res.json({ bearer: newToken })
+    res.json({ bearerToken: newToken, userID })
   } catch (err) {
     res.status(401).redirect(CLIENT_URL, { clearCookie: true })
   }

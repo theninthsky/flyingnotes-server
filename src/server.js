@@ -1,6 +1,6 @@
 import https from 'https'
 
-const { PORT = 5000, SERVER_URL = '' } = process.env
+const { PORT = 5000, SERVER_URL = 'https://localhost:5000' } = process.env
 
 import('./database.js').then(async ({ connect }) => {
   try {
