@@ -22,7 +22,7 @@
     "fast-json-stable-stringify": "^2.1.0",
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.6.1",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v18.4.0"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v18.5.0"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",

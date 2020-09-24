@@ -6,6 +6,7 @@ import { patchRequest, patchBody, patchResponse, patchWebsocket } from './patch/
 import { getNewToken, register, login, updateUser, changePassword, logout } from './controllers/user.js'
 import { getNotes, createNote, updateNote, deleteNote } from './controllers/notes.js'
 import { getFiles, deleteFile } from './controllers/files.js'
+import { clear } from 'console'
 
 const { ACCESS_TOKEN_SECRET } = process.env
 const decoder = new StringDecoder('utf8')
@@ -72,6 +73,8 @@ export default uWS
     },
     open: ws => {
       console.log('A WebSocket connected!')
+
+      ws.ping()
     },
     message: (ws, data, isBinary) => {
       const message = JSON.parse(decoder.write(Buffer.from(data)))
@@ -81,6 +84,11 @@ export default uWS
     },
     drain: ws => {
       console.log('WebSocket backpressure: ' + ws.getBufferedAmount())
+    },
+    pong: ws => {
+      setTimeout(() => {
+        if (!ws.ping()) ws.close()
+      }, 30000)
     },
     close: (ws, code, message) => {
       console.log('WebSocket closed')
