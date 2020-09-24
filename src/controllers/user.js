@@ -89,7 +89,7 @@ export const updateUser = async (ws, { userID, name }) => {
   try {
     await users.updateOne({ _id: ObjectID(userID) }, { $set: { name } })
 
-    ws.json({ status: 'OK' })
+    ws.json({ status: 'SUCCESS' })
   } catch (err) {
     console.error(err)
 
@@ -113,7 +113,7 @@ export const changePassword = async (ws, { userID, password, newPassword }) => {
     )
     tokens.deleteOne({ userID: ObjectID(userID) })
 
-    ws.json({ status: 'OK' })
+    ws.json({ status: 'SUCCESS' })
   } catch (err) {
     console.error(err)
 

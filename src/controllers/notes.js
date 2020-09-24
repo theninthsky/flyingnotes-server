@@ -16,7 +16,7 @@ export const getNotes = async (ws, { userID }) => {
   }
 }
 
-export const addNote = async (ws, { userID, category = '', title, content }) => {
+export const createNote = async (ws, { userID, newNote: { category = '', title, content } }) => {
   try {
     const {
       value: {
@@ -46,7 +46,7 @@ export const addNote = async (ws, { userID, category = '', title, content }) => 
   }
 }
 
-export const updateNote = async (ws, { userID, noteID, category = '', title, content }) => {
+export const updateNote = async (ws, { userID, updatedNote: { _id: noteID, category = '', title, content } }) => {
   try {
     const {
       value: {
@@ -80,7 +80,7 @@ export const deleteNote = async (ws, { userID, noteID }) => {
   try {
     await users.updateOne({ _id: ObjectID(userID) }, { $pull: { notes: { _id: ObjectID(noteID) } } })
 
-    ws.json({ status: 'OK' })
+    ws.json({ status: 'SUCCESS', noteID })
   } catch (err) {
     console.error(err)
 

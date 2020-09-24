@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 
 import { patchRequest, patchBody, patchResponse, patchWebsocket } from './patch/index.js'
 import { getNewToken, register, login, updateUser, changePassword, logout } from './controllers/user.js'
-import { getNotes, addNote, updateNote, deleteNote } from './controllers/notes.js'
+import { getNotes, createNote, updateNote, deleteNote } from './controllers/notes.js'
 import { getFiles, deleteFile } from './controllers/files.js'
 
 const { ACCESS_TOKEN_SECRET } = process.env
@@ -25,7 +25,7 @@ const messageTypes = {
   updateUser,
   changePassword,
   getNotes,
-  addNote,
+  createNote,
   updateNote,
   deleteNote,
   getFiles,
