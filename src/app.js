@@ -1,61 +1,88 @@
 import uWS from 'uWebSockets.js'
+import { StringDecoder } from 'string_decoder'
+import jwt from 'jsonwebtoken'
 
-import { patchRequest, patchResponse, patchBody } from './patch.js'
-import auth from './auth.js'
-import * as userController from './controllers/user.js'
-import * as notesController from './controllers/notes.js'
-import * as filesController from './controllers/files.js'
+import { patchRequest, patchBody, patchResponse, patchWebsocket } from './patch/index.js'
+import { getNewToken, register, login, updateUser, changePassword, logout } from './controllers/user.js'
+import { getNotes, createNote, updateNote, deleteNote } from './controllers/notes.js'
+import { getFiles, deleteFile } from './controllers/files.js'
 
-const { CLIENT_URL = 'http://localhost:3000' } = process.env
+const { ACCESS_TOKEN_SECRET } = process.env
+const decoder = new StringDecoder('utf8')
 
 const publicRoutes = {
-  post: {
-    '/register': userController.registerUser,
-    '/login': userController.loginUser,
-  },
-}
-
-const privateRoutes = {
   get: {
-    '/notes': notesController.getNotes,
-    '/files': filesController.getFiles,
+    '/get-new-token': getNewToken,
   },
   post: {
-    '/register': userController.registerUser,
-    '/login': userController.loginUser,
-    '/logout': userController.logoutUser,
-    '/notes': notesController.createNote,
-    '/files': filesController.uploadFile,
-    '/file': filesController.downloadFile,
+    '/register': register,
+    '/login': login,
+    '/logout': logout,
   },
-  put: {
-    '/update': userController.updateUser,
-    '/register': userController.changePassword,
-    '/notes': notesController.updateNote,
-  },
-  delete: { '/notes': notesController.deleteNote, '/file': filesController.deleteFile },
 }
 
-const defaultRoute = (_, res) => res.sendStatus(404)
+const messageTypes = {
+  updateUser,
+  changePassword,
+  getNotes,
+  createNote,
+  updateNote,
+  deleteNote,
+  getFiles,
+  deleteFile,
+}
 
-export default uWS.App().any('/*', async (res, req) => {
-  res.onAborted(() => {
-    res.aborted = true
+export default uWS
+  .App()
+  .any('/*', async (res, req) => {
+    res.onAborted(() => {})
+
+    patchResponse(res)
+
+    if (req.getMethod() == 'options') return res.sendStatus(204)
+
+    patchRequest(req)
+
+    await patchBody(req, res)
+
+    try {
+      publicRoutes[req.method][req.url](req, res)
+    } catch (err) {
+      res.sendStatus(404)
+    }
   })
+  .ws('/*', {
+    compression: uWS.SHARED_COMPRESSOR,
+    maxPayloadLength: 16 * 1024 * 1024,
+    idleTimeout: 0,
+    upgrade: async (res, req, context) => {
+      res.onAborted(() => {})
 
-  patchResponse(res)
+      const url = req.getUrl()
+      const secWebSocketKey = req.getHeader('sec-websocket-key')
+      const secWebSocketProtocol = req.getHeader('sec-websocket-protocol')
+      const secWebSocketExtensions = req.getHeader('sec-websocket-extensions')
 
-  if (req.getMethod() == 'options') return res.sendStatus(204)
+      try {
+        jwt.verify(secWebSocketProtocol, ACCESS_TOKEN_SECRET)
+        res.upgrade({ url }, secWebSocketKey, secWebSocketProtocol, secWebSocketExtensions, context)
+      } catch (err) {
+        return res.writeStatus('401').end()
+      }
+    },
+    open: ws => {
+      console.log('A WebSocket connected!')
+    },
+    message: (ws, data, isBinary) => {
+      const message = JSON.parse(decoder.write(Buffer.from(data)))
 
-  patchRequest(req)
-
-  await patchBody(req, res)
-  await auth(req, res)
-
-  if (req.expired) return res.status(401).redirect(CLIENT_URL, { clearCookie: true })
-  if (!req.userID) {
-    return (publicRoutes[req.method] ? publicRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
-  }
-
-  ;(privateRoutes[req.method] ? privateRoutes[req.method][req.url] || defaultRoute : defaultRoute)(req, res)
-})
+      patchWebsocket(ws, message)
+      messageTypes[message.type](ws, message)
+    },
+    drain: ws => {
+      console.log('WebSocket backpressure: ' + ws.getBufferedAmount())
+    },
+    close: (ws, code, message) => {
+      console.log('WebSocket closed')
+    },
+  })

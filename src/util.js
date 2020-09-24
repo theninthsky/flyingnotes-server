@@ -54,4 +54,6 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
     'Set-Cookie',
     `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None${isProduction ? '; Secure' : ''}`,
   )
+
+  return accessToken
 }

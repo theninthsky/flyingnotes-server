@@ -1,14 +1,44 @@
 import mongodb from 'mongodb'
+import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 
 import { users, tokens } from '../database.js'
 import { generateRefreshToken, updateRefreshToken, generateAccessToken } from '../util.js'
 
-const { CLIENT_URL = 'http://localhost:3000' } = process.env
+const { ACCESS_TOKEN_SECRET, CLIENT_URL = 'http://localhost:3000' } = process.env
 const { ObjectID } = mongodb
 const SALT_ROUNDS = 10
 
-export const registerUser = async (req, res) => {
+export const getNewToken = async (req, res) => {
+  try {
+    const { cookie = '' } = req.headers
+    const [token] = cookie.match(/(?<=Bearer=)[\w.-]+/) || []
+
+    if (!token) throw Error()
+
+    const { userID, refreshTokenID, exp } = jwt.verify(token, ACCESS_TOKEN_SECRET, { ignoreExpiration: true })
+
+    if (Date.now() < exp * 1000) return res.json({ bearerToken: token, userID })
+
+    const { expiresIn } = await tokens.findOne({ _id: ObjectID(refreshTokenID) })
+
+    if (new Date(expiresIn) < new Date()) {
+      tokens.deleteOne({ _id: ObjectID(refreshTokenID) })
+
+      throw Error()
+    }
+
+    const newToken = generateAccessToken(res, userID, refreshTokenID)
+
+    updateRefreshToken(refreshTokenID)
+
+    res.json({ bearerToken: newToken, userID })
+  } catch (err) {
+    res.status(401).redirect(CLIENT_URL, { clearCookie: true })
+  }
+}
+
+export const register = async (req, res) => {
   const { name, email, password, notes = [] } = req.body
 
   try {
@@ -20,15 +50,15 @@ export const registerUser = async (req, res) => {
 
     const refreshTokenID = await generateRefreshToken(user._id)
 
-    generateAccessToken(res, user._id, refreshTokenID)
+    const token = generateAccessToken(res, user._id, refreshTokenID)
 
-    res.status(201).json({ name: user.name, notes: user.notes })
+    res.status(201).json({ bearer: token, name: user.name, notes: user.notes })
   } catch (err) {
     res.status(409).send('This email address is already registered, try login instead')
   }
 }
 
-export const loginUser = async (req, res) => {
+export const login = async (req, res) => {
   const { email, password } = req.body
 
   try {
@@ -43,10 +73,11 @@ export const loginUser = async (req, res) => {
 
     const { _id: refreshTokenID = await generateRefreshToken(userID) } = (await tokens.findOne({ userID })) || {}
 
-    generateAccessToken(res, userID, refreshTokenID)
+    const token = generateAccessToken(res, userID, refreshTokenID)
+
     updateRefreshToken(refreshTokenID)
 
-    res.json({ name, notes })
+    res.json({ bearer: token, name, notes })
   } catch (err) {
     console.error(err)
 
@@ -54,32 +85,27 @@ export const loginUser = async (req, res) => {
   }
 }
 
-export const updateUser = async (req, res) => {
+export const updateUser = async (ws, { userID, newName }) => {
   try {
-    await users.updateOne({ _id: ObjectID(req.userID) }, { $set: { name: req.body.name } })
+    await users.updateOne({ _id: ObjectID(userID) }, { $set: { name: newName } })
 
-    res.sendStatus(200)
+    ws.json({ status: 'SUCCESS', newName })
   } catch (err) {
     console.error(err)
 
-    res.sendStatus(500)
+    ws.json({ status: 'FAIL' })
   }
 }
 
-export const changePassword = async (req, res) => {
-  const {
-    userID,
-    body: { password, newPassword },
-  } = req
-
+export const changePassword = async (ws, { userID, password, newPassword }) => {
   try {
     const user = await users.findOne({ _id: ObjectID(userID) })
 
-    if (!user) return res.status(404).send('Incorrect password')
+    if (!user) return ws.json({ error: 'Incorrect password' })
 
     const match = await bcrypt.compare(password, user.password)
 
-    if (!match) return res.sendStatus(404)
+    if (!match) return ws.json({ error: 'Not found' })
 
     await users.updateOne(
       { _id: ObjectID(userID) },
@@ -87,18 +113,12 @@ export const changePassword = async (req, res) => {
     )
     tokens.deleteOne({ userID: ObjectID(userID) })
 
-    const refreshTokenID = await generateRefreshToken(userID)
-
-    generateAccessToken(res, userID, refreshTokenID)
-
-    res.sendStatus(200)
+    ws.json({ status: 'SUCCESS' })
   } catch (err) {
     console.error(err)
 
-    res.sendStatus(500)
+    ws.json({ status: 'FAIL' })
   }
 }
 
-export const logoutUser = (_, res) => {
-  res.status(204).redirect(CLIENT_URL, { clearCookie: true })
-}
+export const logout = (_, res) => res.status(204).redirect(CLIENT_URL, { clearCookie: true })

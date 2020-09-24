@@ -4,30 +4,26 @@ import { users } from '../database.js'
 
 const { ObjectID } = mongodb
 
-export const getNotes = async (req, res) => {
+export const getNotes = async (ws, { userID }) => {
   try {
-    const { notes } = await users.findOne({ _id: ObjectID(req.userID) }, { projection: { notes: 1 } })
+    const { notes } = await users.findOne({ _id: ObjectID(userID) }, { projection: { notes: 1 } })
 
-    res.json({ notes })
+    ws.json({ type: 'getNotes', notes })
   } catch (err) {
     console.error(err)
 
-    res.sendStatus(500)
+    ws.send()
   }
 }
 
-export const createNote = async (req, res) => {
-  const {
-    body: { category, title, content },
-  } = req
-
+export const createNote = async (ws, { userID, newNote: { category = '', title, content } }) => {
   try {
     const {
       value: {
         notes: [newNote],
       },
     } = await users.findOneAndUpdate(
-      { _id: ObjectID(req.userID) },
+      { _id: ObjectID(userID) },
       {
         $push: {
           notes: {
@@ -42,20 +38,15 @@ export const createNote = async (req, res) => {
       { projection: { notes: { $slice: -1 } }, returnOriginal: false },
     )
 
-    res.status(201).json({ newNote })
+    ws.json({ newNote })
   } catch (err) {
     console.error(err)
 
-    res.sendStatus(500)
+    ws.send()
   }
 }
 
-export const updateNote = async (req, res) => {
-  const {
-    userID,
-    body: { _id: noteID, category, title, content },
-  } = req
-
+export const updateNote = async (ws, { userID, updatedNote: { _id: noteID, category = '', title, content } }) => {
   try {
     const {
       value: {
@@ -77,26 +68,22 @@ export const updateNote = async (req, res) => {
       { projection: { notes: { $elemMatch: { _id: ObjectID(noteID) } } }, returnOriginal: false },
     )
 
-    res.json({ updatedNote })
+    ws.json({ updatedNote })
   } catch (err) {
     console.error(err)
 
-    res.sendStatus(500)
+    ws.send()
   }
 }
 
-export const deleteNote = async (req, res) => {
-  const {
-    userID,
-    body: { noteID },
-  } = req
-
+export const deleteNote = async (ws, { userID, noteID }) => {
   try {
     await users.updateOne({ _id: ObjectID(userID) }, { $pull: { notes: { _id: ObjectID(noteID) } } })
 
-    res.sendStatus(204)
+    ws.json({ status: 'SUCCESS', noteID })
   } catch (err) {
     console.error(err)
-    res.sendStatus(500)
+
+    ws.json({ status: 'FAIL' })
   }
 }

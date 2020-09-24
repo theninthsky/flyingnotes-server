@@ -11,7 +11,7 @@ export const connect = async () => {
   if (NODE_ENV != 'test') {
     await client.connect()
 
-    console.log(`[Worker ${process.pid}] MongoDB is connected...`)
+    console.log('MongoDB is connected...')
 
     const db = client.db(DB_NAME)
 
