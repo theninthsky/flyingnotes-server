@@ -85,11 +85,11 @@ export const login = async (req, res) => {
   }
 }
 
-export const updateUser = async (ws, { userID, name }) => {
+export const updateUser = async (ws, { userID, newName }) => {
   try {
-    await users.updateOne({ _id: ObjectID(userID) }, { $set: { name } })
+    await users.updateOne({ _id: ObjectID(userID) }, { $set: { name: newName } })
 
-    ws.json({ status: 'SUCCESS' })
+    ws.json({ status: 'SUCCESS', newName })
   } catch (err) {
     console.error(err)
 
@@ -121,6 +121,4 @@ export const changePassword = async (ws, { userID, password, newPassword }) => {
   }
 }
 
-export const logout = (_, res) => {
-  res.status(204).redirect(CLIENT_URL, { clearCookie: true })
-}
+export const logout = (_, res) => res.status(204).redirect(CLIENT_URL, { clearCookie: true })
