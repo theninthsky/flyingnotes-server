@@ -7,12 +7,12 @@ const {
   NODE_ENV,
   CLIENT_URL = 'http://localhost:3000',
   ACCESS_TOKEN_SECRET,
-  ACCESS_TOKEN_EXPIRES_IN = 60 * 10,
+  ACCESS_TOKEN_EXPIRES_IN = 10 * 60,
   REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3,
 } = process.env
 const { ObjectID } = mongodb
 
-const COOKIE_EXPIRES_IN = 3600 * 24 * 30 * REFRESH_TOKEN_EXPIRES_IN_MONTHS
+const COOKIE_EXPIRES_IN = REFRESH_TOKEN_EXPIRES_IN_MONTHS * 30 * 24 * 60 * 60
 const isProduction = NODE_ENV == 'production'
 
 export const corsHeaders = {
@@ -20,6 +20,7 @@ export const corsHeaders = {
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Max-Age': `${24 * 60 * 60}`,
 }
 
 export const generateRefreshToken = async userID => {

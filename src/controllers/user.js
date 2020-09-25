@@ -5,9 +5,8 @@ import bcrypt from 'bcrypt'
 import { users, tokens } from '../database.js'
 import { generateRefreshToken, updateRefreshToken, generateAccessToken } from '../util.js'
 
-const { ACCESS_TOKEN_SECRET, CLIENT_URL = 'http://localhost:3000' } = process.env
+const { ACCESS_TOKEN_SECRET, CLIENT_URL = 'http://localhost:3000', BCRYPT_SALT_ROUNDS = 10 } = process.env
 const { ObjectID } = mongodb
-const SALT_ROUNDS = 10
 
 export const getNewToken = async (req, res) => {
   try {
@@ -44,7 +43,7 @@ export const register = async (req, res) => {
   try {
     const {
       ops: [user],
-    } = await users.insertOne({ name, email, password: await bcrypt.hash(password, SALT_ROUNDS), notes })
+    } = await users.insertOne({ name, email, password: await bcrypt.hash(password, +BCRYPT_SALT_ROUNDS), notes })
 
     console.log(`${user.name} registered`)
 
@@ -109,7 +108,7 @@ export const changePassword = async (ws, { userID, password, newPassword }) => {
 
     await users.updateOne(
       { _id: ObjectID(userID) },
-      { $set: { password: await bcrypt.hash(newPassword, SALT_ROUNDS) } },
+      { $set: { password: await bcrypt.hash(newPassword, +BCRYPT_SALT_ROUNDS) } },
     )
     tokens.deleteOne({ userID: ObjectID(userID) })
 

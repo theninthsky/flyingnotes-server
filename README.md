@@ -4,19 +4,21 @@
 
 A `.env` file (https://www.npmjs.com/package/dotenv) should be placed at the root directory which will specify the following variables:
 
-`MONGODB_URI` (required)
+`ACCESS_TOKEN_EXPIRES_IN` (optional, default: 10 minutes)
 
 `ACCESS_TOKEN_SECRET` (required)
 
-`ACCESS_TOKEN_EXPIRES_IN` (optional, default: 10 minutes)
-
-`REFRESH_TOKEN_EXPIRES_IN_MONTHS` (optional, default: 3)
-
-`PORT` (optional, default: 5000)
+`BCRYPT_SALT_ROUNDS` (optional, default: 10)
 
 `CLIENT_URL` (required, default: localhost:3000)
 
 `HEROKUAPP_URL` - to prevent Heroku app from sleeping [depends on dynos] - (optional)
+
+`MONGODB_URI` (required)
+
+`PORT` (optional, default: 5000)
+
+`REFRESH_TOKEN_EXPIRES_IN_MONTHS` (optional, default: 3)
 
 ## Available Scripts
 
