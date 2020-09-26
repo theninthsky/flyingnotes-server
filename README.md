@@ -2,8 +2,6 @@
 
 ## Environment Variables
 
-A `.env` file (https://www.npmjs.com/package/dotenv) should be placed at the root directory which will specify the following variables:
-
 `ACCESS_TOKEN_EXPIRES_IN` (optional, default: 10 minutes)
 
 `ACCESS_TOKEN_SECRET` (required)
@@ -12,9 +10,11 @@ A `.env` file (https://www.npmjs.com/package/dotenv) should be placed at the roo
 
 `CLIENT_URL` (required, default: localhost:3000)
 
-`HEROKUAPP_URL` - to prevent Heroku app from sleeping [depends on dynos] - (optional)
+`HEROKUAPP_URL` (optional) - To prevent Heroku app from sleeping [depends on dynos]
 
 `MONGODB_URI` (required)
+
+`PING_INTERVAL` (optional, default: 30000) - The interval for the WebSocket's ping message
 
 `PORT` (optional, default: 5000)
 
