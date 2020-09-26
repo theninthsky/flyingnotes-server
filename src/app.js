@@ -6,9 +6,8 @@ import { patchRequest, patchBody, patchResponse, patchWebsocket } from './patch/
 import { getNewToken, register, login, updateUser, changePassword, logout } from './controllers/user.js'
 import { getNotes, createNote, updateNote, deleteNote } from './controllers/notes.js'
 import { getFiles, deleteFile } from './controllers/files.js'
-import { clear } from 'console'
 
-const { ACCESS_TOKEN_SECRET } = process.env
+const { ACCESS_TOKEN_SECRET, PING_INTERVAL = 30000 } = process.env
 const decoder = new StringDecoder('utf8')
 
 const publicRoutes = {
@@ -43,7 +42,6 @@ export default uWS
     if (req.getMethod() == 'options') return res.sendStatus(204)
 
     patchRequest(req)
-
     await patchBody(req, res)
 
     try {
@@ -72,7 +70,7 @@ export default uWS
       }
     },
     open: ws => {
-      console.log('A WebSocket connected!')
+      console.log(`A WebSocket connected!`)
 
       ws.ping()
     },
@@ -87,10 +85,12 @@ export default uWS
     },
     pong: ws => {
       setTimeout(() => {
-        if (!ws.ping()) ws.close()
-      }, 30000)
+        if (ws.ping && !ws.ping()) ws.close()
+      }, +PING_INTERVAL)
     },
     close: (ws, code, message) => {
-      console.log('WebSocket closed')
+      console.log('A WebSocket closed')
+
+      ws.ping = null // ws.ping throws an error when called after the socket was closed
     },
   })

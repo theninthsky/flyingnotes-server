@@ -17,4 +17,4 @@ import('./database.js').then(async ({ connect }) => {
 
 setInterval(() => https.get(SERVER_URL), 900000) // keep Heroku app awake
 
-process.on('uncaughtException', err => console.log(err.stack))
+process.on('uncaughtException', err => console.error(err.stack || err))
