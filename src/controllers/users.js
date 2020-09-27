@@ -3,6 +3,12 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 
 import { users, tokens } from '../database.js'
+import {
+  validateRegisterSchema,
+  validateLoginSchema,
+  validateUpdateUserSchema,
+  validateChangePasswordSchema,
+} from '../models/user.js'
 import { generateRefreshToken, updateRefreshToken, generateAccessToken } from '../util.js'
 
 const { ACCESS_TOKEN_SECRET, CLIENT_URL = 'http://localhost:3000', BCRYPT_SALT_ROUNDS = 10 } = process.env
@@ -38,9 +44,10 @@ export const getNewToken = async (req, res) => {
 }
 
 export const register = async (req, res) => {
-  const { name, email, password, notes = [] } = req.body
+  if (!validateRegisterSchema(req.body)) return res.sendStatus(400)
 
   try {
+    const { name, email, password, notes = [] } = req.body
     const {
       ops: [user],
     } = await users.insertOne({ name, email, password: await bcrypt.hash(password, +BCRYPT_SALT_ROUNDS), notes })
@@ -48,7 +55,6 @@ export const register = async (req, res) => {
     console.log(`${user.name} registered`)
 
     const refreshTokenID = await generateRefreshToken(user._id)
-
     const token = generateAccessToken(res, user._id, refreshTokenID)
 
     res.status(201).json({ bearer: token, name: user.name, notes: user.notes })
@@ -58,9 +64,10 @@ export const register = async (req, res) => {
 }
 
 export const login = async (req, res) => {
-  const { email, password } = req.body
+  if (!validateLoginSchema(req.body)) return res.sendStatus(400)
 
   try {
+    const { email, password } = req.body
     const user = await users.findOne({ email: email.toLowerCase() })
 
     if (!user) return res.status(404).send('No such user')
@@ -84,8 +91,12 @@ export const login = async (req, res) => {
   }
 }
 
-export const updateUser = async (ws, { userID, newName }) => {
+export const updateUser = async (ws, message) => {
+  if (!validateUpdateUserSchema(message)) return ws.json({ status: 'FAIL' })
+
   try {
+    const { userID, newName } = message
+
     await users.updateOne({ _id: ObjectID(userID) }, { $set: { name: newName } })
 
     ws.json({ status: 'SUCCESS', newName })
@@ -96,8 +107,11 @@ export const updateUser = async (ws, { userID, newName }) => {
   }
 }
 
-export const changePassword = async (ws, { userID, password, newPassword }) => {
+export const changePassword = async (ws, message) => {
+  if (!validateChangePasswordSchema(message)) return ws.json({ status: 'FAIL' })
+
   try {
+    const { userID, password, newPassword } = message
     const user = await users.findOne({ _id: ObjectID(userID) })
 
     if (!user) return ws.json({ error: 'Incorrect password' })

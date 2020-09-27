@@ -17,6 +17,7 @@
   "author": "Almog Gabay",
   "license": "ISC",
   "dependencies": {
+    "@exodus/schemasafe": "^1.0.0-rc.2",
     "bcrypt": "^5.0.0",
     "dotenv": "^8.2.0",
     "fast-json-stable-stringify": "^2.1.0",

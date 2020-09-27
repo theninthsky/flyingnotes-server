@@ -2,8 +2,8 @@ import uWS from 'uWebSockets.js'
 import { StringDecoder } from 'string_decoder'
 import jwt from 'jsonwebtoken'
 
-import { patchRequest, patchBody, patchResponse, patchWebsocket } from './patch/index.js'
-import { getNewToken, register, login, updateUser, changePassword, logout } from './controllers/user.js'
+import { patchRequest, patchBody, patchResponse, patchWebSocket } from './patch/index.js'
+import { getNewToken, register, login, updateUser, changePassword, logout } from './controllers/users.js'
 import { getNotes, createNote, updateNote, deleteNote } from './controllers/notes.js'
 import { getFiles, deleteFile } from './controllers/files.js'
 
@@ -77,7 +77,7 @@ export default uWS
     message: (ws, data, isBinary) => {
       const message = JSON.parse(decoder.write(Buffer.from(data)))
 
-      patchWebsocket(ws, message)
+      patchWebSocket(ws, message)
       messageTypes[message.type](ws, message)
     },
     drain: ws => {
