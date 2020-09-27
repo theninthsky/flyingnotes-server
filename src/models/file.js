@@ -1,12 +1,30 @@
 import schemaSafe from '@exodus/schemasafe'
 
-export default schemaSafe.validator({
-  type: 'object',
-  properties: {
-    category: { type: 'string' },
-    name: { type: 'string' },
-    extension: { type: 'string' },
-    mimetype: { type: 'string' },
-    buffer: { type: 'object' },
+const { validator } = schemaSafe
+const options = { isJSON: true, unmodifiedPrototypes: true }
+
+export const validateUploadFile = validator(
+  {
+    type: 'object',
+    properties: {
+      userID: { type: 'string' },
+      category: { type: 'string' },
+      name: { type: 'string' },
+      extension: { type: 'string' },
+      mimetype: { type: 'string' },
+      buffer: { type: 'object' },
+    },
   },
-})
+  options,
+)
+
+export const validateDeleteFile = validator(
+  {
+    type: 'object',
+    properties: {
+      userID: { type: 'string' },
+      fileID: { type: 'string' },
+    },
+  },
+  options,
+)

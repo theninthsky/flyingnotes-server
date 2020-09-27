@@ -3,12 +3,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 
 import { users, tokens } from '../database.js'
-import {
-  validateRegisterSchema,
-  validateLoginSchema,
-  validateUpdateUserSchema,
-  validateChangePasswordSchema,
-} from '../models/user.js'
+import { validateRegister, validateLogin, validateUpdateUser, validateChangePassword } from '../models/user.js'
 import { generateRefreshToken, updateRefreshToken, generateAccessToken } from '../util.js'
 
 const { ACCESS_TOKEN_SECRET, CLIENT_URL = 'http://localhost:3000', BCRYPT_SALT_ROUNDS = 10 } = process.env
@@ -44,7 +39,7 @@ export const getNewToken = async (req, res) => {
 }
 
 export const register = async (req, res) => {
-  if (!validateRegisterSchema(req.body)) return res.sendStatus(400)
+  if (!validateRegister(req.body)) return res.sendStatus(400)
 
   try {
     const { name, email, password, notes = [] } = req.body
@@ -64,7 +59,7 @@ export const register = async (req, res) => {
 }
 
 export const login = async (req, res) => {
-  if (!validateLoginSchema(req.body)) return res.sendStatus(400)
+  if (!validateLogin(req.body)) return res.sendStatus(400)
 
   try {
     const { email, password } = req.body
@@ -92,25 +87,23 @@ export const login = async (req, res) => {
 }
 
 export const updateUser = async (ws, message) => {
-  if (!validateUpdateUserSchema(message)) return ws.json({ status: 'FAIL' })
-
   try {
+    if (!validateUpdateUser(message)) throw Error('Invalid parameters')
+
     const { userID, newName } = message
 
     await users.updateOne({ _id: ObjectID(userID) }, { $set: { name: newName } })
 
     ws.json({ status: 'SUCCESS', newName })
-  } catch (err) {
-    console.error(err)
-
-    ws.json({ status: 'FAIL' })
+  } catch ({ message }) {
+    ws.json({ status: 'FAIL', message })
   }
 }
 
 export const changePassword = async (ws, message) => {
-  if (!validateChangePasswordSchema(message)) return ws.json({ status: 'FAIL' })
-
   try {
+    if (!validateChangePassword(message)) throw Error('Invalid parameters')
+
     const { userID, password, newPassword } = message
     const user = await users.findOne({ _id: ObjectID(userID) })
 
@@ -127,10 +120,8 @@ export const changePassword = async (ws, message) => {
     tokens.deleteOne({ userID: ObjectID(userID) })
 
     ws.json({ status: 'SUCCESS' })
-  } catch (err) {
-    console.error(err)
-
-    ws.json({ status: 'FAIL' })
+  } catch ({ message }) {
+    ws.json({ status: 'FAIL', message })
   }
 }
 

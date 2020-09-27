@@ -3,7 +3,7 @@ import schemaSafe from '@exodus/schemasafe'
 const { validator } = schemaSafe
 const options = { isJSON: true, unmodifiedPrototypes: true }
 
-export const validateRegisterSchema = validator(
+export const validateRegister = validator(
   {
     type: 'object',
     properties: {
@@ -17,7 +17,7 @@ export const validateRegisterSchema = validator(
   options,
 )
 
-export const validateLoginSchema = validator(
+export const validateLogin = validator(
   {
     type: 'object',
     properties: {
@@ -29,7 +29,7 @@ export const validateLoginSchema = validator(
   options,
 )
 
-export const validateUpdateUserSchema = validator(
+export const validateUpdateUser = validator(
   {
     type: 'object',
     properties: {
@@ -41,7 +41,7 @@ export const validateUpdateUserSchema = validator(
   options,
 )
 
-export const validateChangePasswordSchema = validator(
+export const validateChangePassword = validator(
   {
     type: 'object',
     properties: {
@@ -50,6 +50,17 @@ export const validateChangePasswordSchema = validator(
       newPassword: { type: 'string', minLength: 8 },
     },
     required: ['userID', 'password', 'newPassword'],
+  },
+  options,
+)
+
+export const validateUserID = validator(
+  {
+    type: 'object',
+    properties: {
+      userID: { type: 'string' },
+    },
+    required: ['userID'],
   },
   options,
 )

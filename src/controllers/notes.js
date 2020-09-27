@@ -1,23 +1,31 @@
 import mongodb from 'mongodb'
 
 import { users } from '../database.js'
+import { validateUserID } from '../models/user.js'
+import { validateCreateNote, validateUpdateNote, validateDeleteNote } from '../models/note.js'
 
 const { ObjectID } = mongodb
 
-export const getNotes = async (ws, { userID }) => {
+export const getNotes = async (ws, message) => {
   try {
-    const { notes } = await users.findOne({ _id: ObjectID(userID) }, { projection: { notes: 1 } })
+    if (!validateUserID(message)) throw Error('Invalid parameters')
+
+    const { notes } = await users.findOne({ _id: ObjectID(message.userID) }, { projection: { notes: 1 } })
 
     ws.json({ type: 'getNotes', notes })
-  } catch (err) {
-    console.error(err)
-
-    ws.send()
+  } catch ({ message }) {
+    ws.json({ status: 'FAIL', message })
   }
 }
 
-export const createNote = async (ws, { userID, newNote: { category = '', title, content } }) => {
+export const createNote = async (ws, message) => {
   try {
+    if (!validateCreateNote(message)) throw Error('Invalid parameters')
+
+    const {
+      userID,
+      newNote: { category = '', title, content },
+    } = message
     const {
       value: {
         notes: [newNote],
@@ -39,15 +47,19 @@ export const createNote = async (ws, { userID, newNote: { category = '', title, 
     )
 
     ws.json({ newNote })
-  } catch (err) {
-    console.error(err)
-
-    ws.send()
+  } catch ({ message }) {
+    ws.json({ status: 'FAIL', message })
   }
 }
 
-export const updateNote = async (ws, { userID, updatedNote: { _id: noteID, category = '', title, content } }) => {
+export const updateNote = async (ws, message) => {
   try {
+    if (!validateUpdateNote(message)) throw Error('Invalid parameters')
+
+    const {
+      userID,
+      updatedNote: { _id: noteID, category = '', title, content },
+    } = message
     const {
       value: {
         notes: [updatedNote],
@@ -69,21 +81,21 @@ export const updateNote = async (ws, { userID, updatedNote: { _id: noteID, categ
     )
 
     ws.json({ updatedNote })
-  } catch (err) {
-    console.error(err)
-
-    ws.send()
+  } catch ({ message }) {
+    ws.json({ status: 'FAIL', message })
   }
 }
 
-export const deleteNote = async (ws, { userID, noteID }) => {
+export const deleteNote = async (ws, message) => {
   try {
+    if (!validateDeleteNote(message)) throw Error('Invalid parameters')
+
+    const { userID, noteID } = message
+
     await users.updateOne({ _id: ObjectID(userID) }, { $pull: { notes: { _id: ObjectID(noteID) } } })
 
     ws.json({ status: 'SUCCESS', noteID })
-  } catch (err) {
-    console.error(err)
-
-    ws.json({ status: 'FAIL' })
+  } catch ({ message }) {
+    ws.json({ status: 'FAIL', message })
   }
 }

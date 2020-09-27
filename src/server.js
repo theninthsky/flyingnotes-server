@@ -13,8 +13,10 @@ try {
 
 const { default: app } = await import('./app.js')
 
-app.listen(+PORT, token => console.log(`${token ? 'Listening on port' : 'Failed to listen to port'} ${PORT}...`))
+app.listen(+PORT, token =>
+  console.log(`${token ? 'Server is listening to port' : 'Server failed to listen to port'} ${PORT}...`),
+)
 
 setInterval(() => https.get(SERVER_URL), 900000) // keep Heroku app awake
 
-process.on('uncaughtException', err => console.error(err.stack || err))
+process.on('uncaughtException', err => console.error(err.message || err))

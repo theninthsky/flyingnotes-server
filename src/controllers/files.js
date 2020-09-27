@@ -1,20 +1,22 @@
 import mongodb from 'mongodb'
 
 import { files } from '../database.js'
+import { validateUserID } from '../models/user.js'
+import { validateDeleteFile } from '../models/file.js'
 
 const { ObjectID } = mongodb
 
-export const getFiles = async (ws, { userID }) => {
+export const getFiles = async (ws, message) => {
   try {
+    if (!validateUserID(message)) throw Error('Invalid parameters')
+
     const allFiles = await files
-      .find({ userID: ObjectID(userID) }, { projection: { userID: 0, mimetype: 0, buffer: 0 } })
+      .find({ userID: ObjectID(message.userID) }, { projection: { userID: 0, mimetype: 0, buffer: 0 } })
       .toArray()
 
     ws.json({ files: allFiles })
-  } catch (err) {
-    console.error(err)
-
-    ws.send()
+  } catch ({ message }) {
+    ws.json({ status: 'FAIL', message })
   }
 }
 
@@ -67,14 +69,16 @@ export const getFiles = async (ws, { userID }) => {
 //   }
 // }
 
-export const deleteFile = async (ws, { userID, fileID }) => {
+export const deleteFile = async (ws, message) => {
   try {
+    if (!validateDeleteFile(message)) throw Error('Invalid parameters')
+
+    const { userID, fileID } = message
+
     await files.deleteOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
 
     ws.json({ status: 'SUCCESS' })
-  } catch (err) {
-    console.log(err)
-
-    ws.json({ status: 'FAIL' })
+  } catch ({ message }) {
+    ws.json({ status: 'FAIL', message })
   }
 }
