@@ -19,7 +19,7 @@ export const validateCreateNote = validator(
     type: 'object',
     properties: {
       userID: { type: 'string' },
-      newNote: { type: 'array' },
+      newNote: { type: 'object' },
     },
     required: ['userID', 'newNote'],
   },
