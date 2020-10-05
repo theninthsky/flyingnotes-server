@@ -54,7 +54,7 @@ export const register = async (req, res) => {
 
     res.status(201).json({ bearer: token, name: user.name, notes: user.notes })
   } catch (err) {
-    res.status(409).send('This email address is already registered, try login instead')
+    res.status(409).json({ err: 'This email address is already registered, try login instead' })
   }
 }
 
@@ -65,12 +65,12 @@ export const login = async (req, res) => {
     const { email, password } = req.body
     const user = await users.findOne({ email: email.toLowerCase() })
 
-    if (!user) return res.status(404).send('No such user')
+    if (!user) return res.status(404).json({ err: 'No such user exists' })
 
     const { _id: userID, password: hashedPassword, name, notes } = user
     const match = await bcrypt.compare(password, hashedPassword)
 
-    if (!match) return res.status(404).send('Incorrect email or password')
+    if (!match) return res.status(404).json({ err: 'Incorrect email or password' })
 
     const { _id: refreshTokenID = await generateRefreshToken(userID) } = (await tokens.findOne({ userID })) || {}
 
