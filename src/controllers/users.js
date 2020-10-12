@@ -52,7 +52,7 @@ export const register = async (req, res) => {
     const refreshTokenID = await generateRefreshToken(user._id)
     const token = generateAccessToken(res, user._id, refreshTokenID)
 
-    res.status(201).json({ bearer: token, name: user.name, notes: user.notes })
+    res.status(201).json({ name: user.name, notes: user.notes })
   } catch (err) {
     res.status(409).json({ err: 'This email address is already registered, try login instead' })
   }
@@ -78,7 +78,7 @@ export const login = async (req, res) => {
 
     updateRefreshToken(refreshTokenID)
 
-    res.json({ bearer: token, name, notes })
+    res.json({ name, notes })
   } catch (err) {
     console.error(err)
 
