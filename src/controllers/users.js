@@ -50,7 +50,8 @@ export const register = async (req, res) => {
     console.log(`${user.name} registered`)
 
     const refreshTokenID = await generateRefreshToken(user._id)
-    const token = generateAccessToken(res, user._id, refreshTokenID)
+
+    generateAccessToken(res, user._id, refreshTokenID)
 
     res.status(201).json({ name: user.name, notes: user.notes })
   } catch (err) {
@@ -74,8 +75,7 @@ export const login = async (req, res) => {
 
     const { _id: refreshTokenID = await generateRefreshToken(userID) } = (await tokens.findOne({ userID })) || {}
 
-    const token = generateAccessToken(res, userID, refreshTokenID)
-
+    generateAccessToken(res, userID, refreshTokenID)
     updateRefreshToken(refreshTokenID)
 
     res.json({ name, notes })
