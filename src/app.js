@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 import { patchRequest, patchBody, patchResponse, patchWebSocket } from './patch/index.js'
 import { getNewToken, register, login, updateUser, changePassword, logout } from './controllers/users.js'
 import { getNotes, createNote, updateNote, deleteNote } from './controllers/notes.js'
-import { getFiles, deleteFile } from './controllers/files.js'
+import { getFiles, uploadFile, downloadFile, deleteFile } from './controllers/files.js'
 
 const { ACCESS_TOKEN_SECRET, PING_INTERVAL = 30000 } = process.env
 const decoder = new StringDecoder('utf8')
@@ -29,6 +29,8 @@ const messageTypes = {
   updateNote,
   deleteNote,
   getFiles,
+  uploadFile,
+  downloadFile,
   deleteFile,
 }
 

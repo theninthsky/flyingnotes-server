@@ -11,7 +11,7 @@ export const getFiles = async (ws, message) => {
     if (!validateUserID(message)) throw Error('Invalid parameters')
 
     const allFiles = await files
-      .find({ userID: ObjectID(message.userID) }, { projection: { userID: 0, mimetype: 0, buffer: 0 } })
+      .find({ userID: ObjectID(message.userID) }, { projection: { userID: 0, base64: 0 } })
       .toArray()
 
     ws.json({ files: allFiles })
@@ -20,54 +20,48 @@ export const getFiles = async (ws, message) => {
   }
 }
 
-// export const uploadFile = async (ws, message) => {
-//   const { userID, category, name, extension, file: { mimetype, buffer } = {} } = message
+export const uploadFile = async (ws, message) => {
+  const { userID, file: { category, name, extension, base64 } = {} } = message
 
-//   if (!buffer) return ws.json({ error: 'No file' })
+  if (!base64) return ws.json({ error: 'No file' })
 
-//   try {
-//     const {
-//       ops: [newFile],
-//     } = await files.insertOne(
-//       {
-//         userID: ObjectID(userID),
-//         category,
-//         name,
-//         extension,
-//         mimetype,
-//         buffer,
-//         date: new Date(),
-//       },
-//       /*{ projection: { userID: 0, mimetype: 0, buffer: 0 } } has no effect */
-//     )
+  try {
+    const {
+      ops: [file],
+    } = await files.insertOne(
+      {
+        userID: ObjectID(userID),
+        category,
+        name,
+        extension,
+        base64,
+        date: new Date(),
+      },
+      /*{ projection: { userID: 0, base64: 0 } } has no effect */
+    )
 
-//     delete newFile.userID
-//     delete newFile.mimetype
-//     delete newFile.buffer
+    delete file.userID
+    delete file.base64
 
-//     ws.json({ newFile })
-//   } catch (err) {
-//     console.log(err)
+    ws.json({ file })
+  } catch (err) {
+    console.log(err)
 
-//     ws.send()
-//   }
-// }
+    ws.send()
+  }
+}
 
-// export const downloadFile = async (ws, { userID, fileID }) => {
-//   try {
-//     const {
-//       mimetype,
-//       buffer: { buffer },
-//     } = await files.findOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
+export const downloadFile = async (ws, { userID, fileID }) => {
+  try {
+    const { _id, name, base64 } = await files.findOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
 
-//     res.header('Content-Type', mimetype)
-//     res.header('Content-Disposition', 'attachment')
-//     res.send(buffer)
-//   } catch (err) {
-//     console.error(err)
-//     res.sendStatus(500)
-//   }
-// }
+    ws.json({ fileID: _id, name, base64 })
+  } catch (err) {
+    console.log(err)
+
+    ws.send()
+  }
+}
 
 export const deleteFile = async (ws, message) => {
   try {
