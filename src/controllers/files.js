@@ -71,7 +71,7 @@ export const deleteFile = async (ws, message) => {
 
     await files.deleteOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
 
-    ws.json({ status: 'SUCCESS' })
+    ws.json({ status: 'SUCCESS', fileID })
   } catch ({ message }) {
     ws.json({ status: 'FAIL', message })
   }
