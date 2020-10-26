@@ -53,9 +53,9 @@ export const uploadFile = async (ws, message) => {
 
 export const downloadFile = async (ws, { userID, fileID }) => {
   try {
-    const { _id, name, base64 } = await files.findOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
+    const { _id, name, extension, base64 } = await files.findOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
 
-    ws.json({ fileID: _id, name, base64 })
+    ws.json({ fileID: _id, name, extension, base64 })
   } catch (err) {
     console.log(err)
 
