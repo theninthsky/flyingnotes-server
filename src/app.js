@@ -77,10 +77,10 @@ export default uWS
       ws.ping()
     },
     message: (ws, data, isBinary) => {
-      const message = JSON.parse(decoder.write(Buffer.from(data)))
+      const { messageID, type, ...message } = JSON.parse(decoder.write(Buffer.from(data)))
 
-      patchWebSocket(ws, message)
-      messageTypes[message.type](ws, message)
+      patchWebSocket(ws, messageID)
+      messageTypes[type](ws, message)
     },
     drain: ws => {
       console.log('WebSocket backpressure: ' + ws.getBufferedAmount())
