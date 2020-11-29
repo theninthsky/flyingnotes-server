@@ -12,13 +12,13 @@ const decoder = new StringDecoder('utf8')
 
 const publicRoutes = {
   get: {
-    '/get-new-token': getNewToken,
+    '/get-new-token': getNewToken
   },
   post: {
     '/register': register,
     '/login': login,
-    '/logout': logout,
-  },
+    '/logout': logout
+  }
 }
 
 const messageTypes = {
@@ -31,7 +31,7 @@ const messageTypes = {
   getFiles,
   uploadFile,
   downloadFile,
-  deleteFile,
+  deleteFile
 }
 
 export default uWS
@@ -74,12 +74,12 @@ export default uWS
     open: ws => {
       console.log(`A WebSocket connected!`)
 
+      patchWebSocket(ws)
       ws.ping()
     },
     message: (ws, data, isBinary) => {
-      const { messageID, type, ...message } = JSON.parse(decoder.write(Buffer.from(data)))
+      const { type, ...message } = JSON.parse(decoder.write(Buffer.from(data)))
 
-      patchWebSocket(ws, messageID)
       messageTypes[type](ws, message)
     },
     drain: ws => {
@@ -94,5 +94,5 @@ export default uWS
       console.log('A WebSocket closed')
 
       ws.ping = null // ws.ping throws an error when called after the socket was closed
-    },
+    }
   })

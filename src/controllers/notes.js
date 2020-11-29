@@ -10,11 +10,13 @@ export const getNotes = async (ws, message) => {
   try {
     if (!validateUserID(message)) throw Error('Invalid parameters')
 
-    const { notes } = await users.findOne({ _id: ObjectID(message.userID) }, { projection: { notes: 1 } })
+    const { messageID, userID } = message
 
-    ws.json({ type: 'getNotes', notes })
+    const { notes } = await users.findOne({ _id: ObjectID(userID) }, { projection: { notes: 1 } })
+
+    ws.json({ messageID, notes })
   } catch ({ message }) {
-    ws.json({ status: 'FAIL', message })
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }
 
@@ -23,13 +25,15 @@ export const createNote = async (ws, message) => {
     if (!validateCreateNote(message)) throw Error('Invalid parameters')
 
     const {
+      messageID,
       userID,
-      newNote: { category = '', title, content },
+      newNote: { category = '', title, content }
     } = message
+
     const {
       value: {
-        notes: [newNote],
-      },
+        notes: [newNote]
+      }
     } = await users.findOneAndUpdate(
       { _id: ObjectID(userID) },
       {
@@ -39,16 +43,16 @@ export const createNote = async (ws, message) => {
             category,
             title,
             content,
-            date: new Date(),
-          },
-        },
+            date: new Date()
+          }
+        }
       },
-      { projection: { notes: { $slice: -1 } }, returnOriginal: false },
+      { projection: { notes: { $slice: -1 } }, returnOriginal: false }
     )
 
-    ws.json({ newNote })
+    ws.json({ messageID, newNote })
   } catch ({ message }) {
-    ws.json({ status: 'FAIL', message })
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }
 
@@ -57,13 +61,15 @@ export const updateNote = async (ws, message) => {
     if (!validateUpdateNote(message)) throw Error('Invalid parameters')
 
     const {
+      messageID,
       userID,
-      updatedNote: { _id: noteID, category = '', title, content },
+      updatedNote: { _id: noteID, category = '', title, content }
     } = message
+
     const {
       value: {
-        notes: [updatedNote],
-      },
+        notes: [updatedNote]
+      }
     } = await users.findOneAndUpdate(
       { _id: ObjectID(userID), 'notes._id': ObjectID(noteID) },
       {
@@ -73,16 +79,16 @@ export const updateNote = async (ws, message) => {
             category,
             title,
             content,
-            date: new Date(),
-          },
-        },
+            date: new Date()
+          }
+        }
       },
-      { projection: { notes: { $elemMatch: { _id: ObjectID(noteID) } } }, returnOriginal: false },
+      { projection: { notes: { $elemMatch: { _id: ObjectID(noteID) } } }, returnOriginal: false }
     )
 
-    ws.json({ updatedNote })
+    ws.json({ messageID, updatedNote })
   } catch ({ message }) {
-    ws.json({ status: 'FAIL', message })
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }
 
@@ -90,12 +96,12 @@ export const deleteNote = async (ws, message) => {
   try {
     if (!validateDeleteNote(message)) throw Error('Invalid parameters')
 
-    const { userID, noteID } = message
+    const { messageID, userID, noteID } = message
 
     await users.updateOne({ _id: ObjectID(userID) }, { $pull: { notes: { _id: ObjectID(noteID) } } })
 
-    ws.json({ status: 'SUCCESS', noteID })
+    ws.json({ messageID, status: 'SUCCESS', noteID })
   } catch ({ message }) {
-    ws.json({ status: 'FAIL', message })
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }

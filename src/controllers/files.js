@@ -10,18 +10,18 @@ export const getFiles = async (ws, message) => {
   try {
     if (!validateUserID(message)) throw Error('Invalid parameters')
 
-    const allFiles = await files
-      .find({ userID: ObjectID(message.userID) }, { projection: { userID: 0, base64: 0 } })
-      .toArray()
+    const { messageID, userID } = message
 
-    ws.json({ files: allFiles })
+    const allFiles = await files.find({ userID: ObjectID(userID) }, { projection: { userID: 0, base64: 0 } }).toArray()
+
+    ws.json({ messageID, files: allFiles })
   } catch ({ message }) {
-    ws.json({ status: 'FAIL', message })
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }
 
 export const uploadFile = async (ws, message) => {
-  const { userID, file: { category, name, extension, base64 } = {} } = message
+  const { messageID, userID, file: { category, name, extension, base64 } = {} } = message
 
   if (!base64) return ws.json({ error: 'No file' })
 
@@ -43,7 +43,7 @@ export const uploadFile = async (ws, message) => {
     delete file.userID
     delete file.base64
 
-    ws.json({ file })
+    ws.json({ messageID, file })
   } catch (err) {
     console.log(err)
 
@@ -51,11 +51,11 @@ export const uploadFile = async (ws, message) => {
   }
 }
 
-export const downloadFile = async (ws, { userID, fileID }) => {
+export const downloadFile = async (ws, { messageID, userID, fileID }) => {
   try {
     const { _id, name, extension, base64 } = await files.findOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
 
-    ws.json({ fileID: _id, name, extension, base64 })
+    ws.json({ messageID, fileID: _id, name, extension, base64 })
   } catch (err) {
     console.log(err)
 
@@ -67,12 +67,12 @@ export const deleteFile = async (ws, message) => {
   try {
     if (!validateDeleteFile(message)) throw Error('Invalid parameters')
 
-    const { userID, fileID } = message
+    const { messageID, userID, fileID } = message
 
     await files.deleteOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
 
-    ws.json({ status: 'SUCCESS', fileID })
+    ws.json({ messageID, fileID, status: 'SUCCESS' })
   } catch ({ message }) {
-    ws.json({ status: 'FAIL', message })
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }

@@ -44,7 +44,7 @@ export const register = async (req, res) => {
   try {
     const { name, email, password, notes = [] } = req.body
     const {
-      ops: [user],
+      ops: [user]
     } = await users.insertOne({ name, email, password: await bcrypt.hash(password, +BCRYPT_SALT_ROUNDS), notes })
 
     console.log(`${user.name} registered`)
@@ -90,13 +90,13 @@ export const updateUser = async (ws, message) => {
   try {
     if (!validateUpdateUser(message)) throw Error('Invalid parameters')
 
-    const { userID, newName } = message
+    const { messageID, userID, newName } = message
 
     await users.updateOne({ _id: ObjectID(userID) }, { $set: { name: newName } })
 
-    ws.json({ status: 'SUCCESS', newName })
+    ws.json({ messageID, status: 'SUCCESS', newName })
   } catch ({ message }) {
-    ws.json({ status: 'FAIL', message })
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }
 
@@ -104,21 +104,21 @@ export const changePassword = async (ws, message) => {
   try {
     if (!validateChangePassword(message)) throw Error('Invalid parameters')
 
-    const { userID, password, newPassword } = message
+    const { messageID, userID, password, newPassword } = message
     const user = await users.findOne({ _id: ObjectID(userID) })
     const match = await bcrypt.compare(password, user.password)
 
-    if (!match) return ws.json({ status: 'FAIL', error: 'Incorrect password' })
+    if (!match) return ws.json({ messageID, status: 'FAIL', error: 'Incorrect password' })
 
     await users.updateOne(
       { _id: ObjectID(userID) },
-      { $set: { password: await bcrypt.hash(newPassword, +BCRYPT_SALT_ROUNDS) } },
+      { $set: { password: await bcrypt.hash(newPassword, +BCRYPT_SALT_ROUNDS) } }
     )
     tokens.deleteOne({ userID: ObjectID(userID) })
 
-    ws.json({ status: 'SUCCESS' })
+    ws.json({ messageID, status: 'SUCCESS' })
   } catch ({ message }) {
-    ws.json({ status: 'FAIL', message })
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }
 

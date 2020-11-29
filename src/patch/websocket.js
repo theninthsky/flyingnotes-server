@@ -1,7 +1,7 @@
 import stringify from 'fast-json-stable-stringify'
 
-export const patchWebSocket = (ws, messageID) => {
+export const patchWebSocket = ws => {
   ws.json = message => {
-    ws.send(stringify({ messageID, ...message }))
+    ws.send(stringify(message))
   }
 }
