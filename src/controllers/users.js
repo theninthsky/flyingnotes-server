@@ -106,12 +106,9 @@ export const changePassword = async (ws, message) => {
 
     const { userID, password, newPassword } = message
     const user = await users.findOne({ _id: ObjectID(userID) })
-
-    if (!user) return ws.json({ error: 'Incorrect password' })
-
     const match = await bcrypt.compare(password, user.password)
 
-    if (!match) return ws.json({ error: 'Not found' })
+    if (!match) return ws.json({ status: 'FAIL', error: 'Incorrect password' })
 
     await users.updateOne(
       { _id: ObjectID(userID) },
