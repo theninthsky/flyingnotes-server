@@ -1,3 +1,3 @@
-export { patchRequest, patchBody } from './request.js'
-export { patchResponse } from './response.js'
-export { patchWebSocket } from './websocket.js'
+export * from './request.js'
+export * from './response.js'
+export * from './websocket.js'
