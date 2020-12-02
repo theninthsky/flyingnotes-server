@@ -7,10 +7,10 @@ import { validateCreateNote, validateUpdateNote, validateDeleteNote } from '../m
 const { ObjectID } = mongodb
 
 export const getNotes = async (ws, message) => {
+  const { messageID, userID } = message
+
   try {
     if (!validateUserID(message)) throw Error('Invalid parameters')
-
-    const { messageID, userID } = message
 
     const { notes } = await users.findOne({ _id: ObjectID(userID) }, { projection: { notes: 1 } })
 
@@ -21,14 +21,14 @@ export const getNotes = async (ws, message) => {
 }
 
 export const createNote = async (ws, message) => {
+  const {
+    messageID,
+    userID,
+    newNote: { category = '', title, content }
+  } = message
+
   try {
     if (!validateCreateNote(message)) throw Error('Invalid parameters')
-
-    const {
-      messageID,
-      userID,
-      newNote: { category = '', title, content }
-    } = message
 
     const {
       value: {
@@ -51,20 +51,20 @@ export const createNote = async (ws, message) => {
     )
 
     ws.json({ messageID, newNote })
-  } catch ({ message }) {
+  } catch (message) {
     ws.json({ messageID, status: 'FAIL', message })
   }
 }
 
 export const updateNote = async (ws, message) => {
+  const {
+    messageID,
+    userID,
+    updatedNote: { _id: noteID, category = '', title, content }
+  } = message
+
   try {
     if (!validateUpdateNote(message)) throw Error('Invalid parameters')
-
-    const {
-      messageID,
-      userID,
-      updatedNote: { _id: noteID, category = '', title, content }
-    } = message
 
     const {
       value: {
@@ -93,10 +93,10 @@ export const updateNote = async (ws, message) => {
 }
 
 export const deleteNote = async (ws, message) => {
+  const { messageID, userID, noteID } = message
+
   try {
     if (!validateDeleteNote(message)) throw Error('Invalid parameters')
-
-    const { messageID, userID, noteID } = message
 
     await users.updateOne({ _id: ObjectID(userID) }, { $pull: { notes: { _id: ObjectID(noteID) } } })
 

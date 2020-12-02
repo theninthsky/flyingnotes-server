@@ -87,10 +87,10 @@ export const login = async (req, res) => {
 }
 
 export const updateUser = async (ws, message) => {
+  const { messageID, userID, newName } = message
+
   try {
     if (!validateUpdateUser(message)) throw Error('Invalid parameters')
-
-    const { messageID, userID, newName } = message
 
     await users.updateOne({ _id: ObjectID(userID) }, { $set: { name: newName } })
 
@@ -101,10 +101,11 @@ export const updateUser = async (ws, message) => {
 }
 
 export const changePassword = async (ws, message) => {
+  const { messageID, userID, password, newPassword } = message
+
   try {
     if (!validateChangePassword(message)) throw Error('Invalid parameters')
 
-    const { messageID, userID, password, newPassword } = message
     const user = await users.findOne({ _id: ObjectID(userID) })
     const match = await bcrypt.compare(password, user.password)
 
