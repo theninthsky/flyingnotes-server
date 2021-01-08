@@ -7,8 +7,8 @@ const {
   NODE_ENV,
   CLIENT_URL = 'http://localhost:3000',
   ACCESS_TOKEN_SECRET,
-  ACCESS_TOKEN_EXPIRES_IN = 10 * 60,
-  REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3,
+  ACCESS_TOKEN_EXPIRES_IN = 1 * 60,
+  REFRESH_TOKEN_EXPIRES_IN_MONTHS = 3
 } = process.env
 const { ObjectID } = mongodb
 
@@ -20,7 +20,7 @@ export const corsHeaders = {
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Max-Age': `${24 * 60 * 60}`,
+  'Access-Control-Max-Age': `${24 * 60 * 60}`
 }
 
 export const generateRefreshToken = async userID => {
@@ -44,16 +44,16 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
   const payload = {
     iss: 'flyingnotes',
     userID,
-    refreshTokenID,
+    refreshTokenID
   }
 
   const accessToken = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN
   })
 
   res.header(
     'Set-Cookie',
-    `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None${isProduction ? '; Secure' : ''}`,
+    `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None${isProduction ? '; Secure' : ''}`
   )
 
   return accessToken

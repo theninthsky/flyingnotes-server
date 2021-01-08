@@ -42,7 +42,7 @@ export const patchResponse = res => {
         'Set-Cookie',
         `Bearer=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=None${
           isProduction ? '; Secure' : ''
-        }`,
+        }`
       )
 
     res.send()
