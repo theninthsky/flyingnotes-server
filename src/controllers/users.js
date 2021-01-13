@@ -85,12 +85,12 @@ export const updateUser = async (ws, message) => {
 }
 
 export const changePassword = async (req, res) => {
-  const { password, newPassword } = req
+  const { password, newPassword } = req.body
 
   try {
     const { userID } = await verifyToken(req)
 
-    if (!validateChangePassword(req)) throw Error('Invalid parameters')
+    if (!validateChangePassword(req.body)) throw Error('Invalid parameters')
 
     const user = await users.findOne({ _id: ObjectID(userID) })
     const match = await bcrypt.compare(password, user.password)

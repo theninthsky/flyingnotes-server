@@ -10,11 +10,11 @@ export const validateRegister = validator(
       name: { type: 'string' },
       email: { type: 'string', format: 'email' },
       password: { type: 'string', minLength: 8 },
-      notes: { type: 'array' },
+      notes: { type: 'array' }
     },
-    required: ['name', 'email', 'password'],
+    required: ['name', 'email', 'password']
   },
-  options,
+  options
 )
 
 export const validateLogin = validator(
@@ -22,11 +22,11 @@ export const validateLogin = validator(
     type: 'object',
     properties: {
       email: { type: 'string', format: 'email' },
-      password: { type: 'string', minLength: 8 },
+      password: { type: 'string', minLength: 8 }
     },
-    required: ['email', 'password'],
+    required: ['email', 'password']
   },
-  options,
+  options
 )
 
 export const validateUpdateUser = validator(
@@ -34,33 +34,32 @@ export const validateUpdateUser = validator(
     type: 'object',
     properties: {
       userID: { type: 'string' },
-      newName: { type: 'string' },
+      newName: { type: 'string' }
     },
-    required: ['userID', 'newName'],
+    required: ['userID', 'newName']
   },
-  options,
+  options
 )
 
 export const validateChangePassword = validator(
   {
     type: 'object',
     properties: {
-      userID: { type: 'string' },
       password: { type: 'string', minLength: 8 },
-      newPassword: { type: 'string', minLength: 8 },
+      newPassword: { type: 'string', minLength: 8 }
     },
-    required: ['userID', 'password', 'newPassword'],
+    required: ['password', 'newPassword']
   },
-  options,
+  options
 )
 
 export const validateUserID = validator(
   {
     type: 'object',
     properties: {
-      userID: { type: 'string' },
+      userID: { type: 'string' }
     },
-    required: ['userID'],
+    required: ['userID']
   },
-  options,
+  options
 )
