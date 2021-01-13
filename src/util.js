@@ -23,6 +23,28 @@ export const corsHeaders = {
   'Access-Control-Max-Age': `${24 * 60 * 60}`
 }
 
+export const verifyToken = async req => {
+  const { cookie = '' } = req.headers
+  const [token] = cookie.match(/(?<=Bearer=)[\w.-]+/) || []
+
+  if (!token) throw Error()
+
+  const { userID, refreshTokenID, exp } = jwt.verify(token, ACCESS_TOKEN_SECRET, { ignoreExpiration: true })
+
+  if (Date.now() < exp * 1000) return { userID, refreshTokenID }
+
+  const { expiresIn } = (await tokens.findOne({ _id: ObjectID(refreshTokenID) })) || {}
+
+  if (!expiresIn) throw Error()
+  if (new Date(expiresIn) < new Date()) {
+    tokens.deleteOne({ _id: ObjectID(refreshTokenID) })
+
+    throw Error()
+  }
+
+  return { userID, refreshTokenID }
+}
+
 export const generateRefreshToken = async userID => {
   const date = new Date()
 
@@ -33,7 +55,7 @@ export const generateRefreshToken = async userID => {
   return _id
 }
 
-export const updateRefreshToken = refreshTokenID => {
+export const touchRefreshToken = refreshTokenID => {
   const date = new Date()
 
   date.setMonth(date.getMonth() + REFRESH_TOKEN_EXPIRES_IN_MONTHS)
@@ -51,7 +73,7 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN
   })
 
-  res.header(
+  res.setHeader(
     'Set-Cookie',
     `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None${isProduction ? '; Secure' : ''}`
   )

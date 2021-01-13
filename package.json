@@ -17,23 +17,23 @@
   "author": "Almog Gabay",
   "license": "ISC",
   "dependencies": {
-    "@exodus/schemasafe": "^1.0.0-rc.2",
+    "@exodus/schemasafe": "^1.0.0-rc.3",
     "bcrypt": "^5.0.0",
     "dotenv": "^8.2.0",
     "fast-json-stable-stringify": "^2.1.0",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^3.6.2",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v18.6.0"
+    "mongodb": "^3.6.3",
+    "ws": "^7.4.2"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
     "chai": "^4.2.0",
     "chai-http": "^4.3.0",
-    "cross-env": "^7.0.2",
+    "cross-env": "^7.0.3",
     "eslint": "^6.8.0",
     "eslint-plugin-mocha": "^6.3.0",
     "mocha": "^7.2.0",
-    "mongodb-memory-server": "^6.8.0",
-    "nodemon": "^2.0.4"
+    "mongodb-memory-server": "^6.9.2",
+    "nodemon": "^2.0.7"
   }
 }

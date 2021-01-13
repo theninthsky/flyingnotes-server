@@ -13,9 +13,7 @@ try {
 
 const { default: app } = await import('./app.js')
 
-app.listen(+PORT, token =>
-  console.log(`${token ? 'Server is listening to port' : 'Server failed to listen to port'} ${PORT}...`),
-)
+app.listen(PORT, () => console.log(`Server is listening on port ${PORT}...`))
 
 setInterval(() => https.get(SERVER_URL), 900000) // keep Heroku app awake
 

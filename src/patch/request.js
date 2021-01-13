@@ -1,32 +1,39 @@
-export const patchRequest = req => {
-  req.url = req.getUrl()
-  req.method = req.getMethod()
-  req.headers = {}
-  req.forEach(header => (req.headers[header] = req.getHeader(header)))
-}
-
-export const patchBody = (req, res) => {
-  return new Promise(resolve => {
+export const patchRequest = async req => {
+  await new Promise(resolve => {
     const { 'content-type': contentType = '' } = req.headers
 
-    let buffer
+    if (contentType.includes('multipart/form-data')) {
+      const busboy = new Busboy({ headers: req.headers })
 
-    res.onData((chunk, isLast) => {
-      const curBuf = Buffer.from(chunk)
+      req.body = {}
 
-      buffer = buffer ? Buffer.concat([buffer, curBuf]) : isLast ? curBuf : Buffer.concat([curBuf])
+      busboy.on('file', (fieldName, file, name, encoding, mimetype) => {
+        const data = []
 
-      if (isLast) {
-        const payload = buffer.toString()
+        file.on('data', chunk => data.push(chunk))
+        file.on('end', () => (req.file = { mimetype, buffer: Buffer.concat(data) }))
+      })
 
+      busboy.on('field', (fieldName, val) => (req.body[fieldName] = val))
+      busboy.on('finish', () => resolve())
+
+      req.pipe(busboy)
+    } else {
+      let payload = ''
+
+      req.on('data', chunk => {
+        payload += chunk.toString()
+      })
+
+      req.on('end', () => {
         try {
-          req.body = contentType.includes('application/json') ? JSON.parse(payload) : payload
-        } catch (err) {
-          req.body = {}
+          req.body = contentType.includes('application/json') ? JSON.parse(payload || '{}') : payload
+        } catch ({ message }) {
+          console.error(`Error: ${message}`)
         }
 
         resolve()
-      }
-    })
+      })
+    }
   })
 }
