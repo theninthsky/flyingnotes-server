@@ -19,13 +19,13 @@ export const corsHeaders = {
   'Access-Control-Allow-Origin': CLIENT_URL,
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': ['Content-Type', 'Authorization'],
   'Access-Control-Max-Age': `${24 * 60 * 60}`
 }
 
 export const verifyToken = async req => {
-  const { cookie = '' } = req.headers
-  const [token] = cookie.match(/(?<=Bearer=)[\w.-]+/) || []
+  const { cookie = '', authorization = '' } = req.headers
+  const [token] = (cookie || authorization).match(/(?<=Bearer=)[\w.-]+/) || []
 
   if (!token) throw Error()
 
