@@ -24,8 +24,11 @@ export const corsHeaders = {
 }
 
 export const verifyToken = async req => {
-  const { cookie = '', authorization = '' } = req.headers
-  const [token] = (cookie || authorization).match(/(?<=Bearer=)[\w.-]+/) || []
+  const {
+    headers: { cookie = '', authorization = '' },
+    url
+  } = req
+  const [token] = (cookie || authorization).match(/(?<=Bearer=)[\w.-]+/) || [url.slice(2)]
 
   if (!token) throw Error()
 
