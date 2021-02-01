@@ -60,7 +60,7 @@ export const updateNote = async (ws, message) => {
   const {
     messageID,
     userID,
-    updatedNote: { _id: noteID, category = '', title, content }
+    updatedNote: { _id: noteID, pinned, category = '', title, content }
   } = message
 
   try {
@@ -76,6 +76,7 @@ export const updateNote = async (ws, message) => {
         $set: {
           'notes.$': {
             _id: ObjectID(noteID),
+            pinned,
             category,
             title,
             content,
