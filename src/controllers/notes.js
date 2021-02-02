@@ -24,7 +24,7 @@ export const createNote = async (ws, message) => {
   const {
     messageID,
     userID,
-    newNote: { category = '', title, content }
+    newNote: { pinned, category = '', title, content }
   } = message
 
   try {
@@ -40,6 +40,7 @@ export const createNote = async (ws, message) => {
         $push: {
           notes: {
             _id: ObjectID(),
+            pinned,
             category,
             title,
             content,
