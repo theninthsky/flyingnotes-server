@@ -12,7 +12,7 @@ export const getNotes = async (ws, message) => {
   try {
     if (!validateUserID(message)) throw Error('Invalid parameters')
 
-    const { notes } = await users.findOne({ _id: ObjectID(userID) }, { projection: { notes: 1 } })
+    const { notes = [] } = await users.findOne({ _id: ObjectID(userID) }, { projection: { notes: 1 } })
 
     ws.json({ messageID, notes })
   } catch ({ message }) {

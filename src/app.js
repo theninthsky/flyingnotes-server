@@ -5,6 +5,7 @@ import { verifyToken } from './util.js'
 import { patchRequest, patchResponse, patchWebSocket } from './patch/index.js'
 import { register, login, renewToken, updateUser, changePassword, logout } from './controllers/users.js'
 import { getNotes, createNote, updateNote, deleteNote } from './controllers/notes.js'
+import { getLists, createList, updateList, deleteList } from './controllers/lists.js'
 import { getFiles, uploadFile, downloadFile, deleteFile } from './controllers/files.js'
 
 const { PING_INTERVAL = 30000 } = process.env
@@ -29,6 +30,10 @@ const messageTypes = {
   createNote,
   updateNote,
   deleteNote,
+  getLists,
+  createList,
+  updateList,
+  deleteList,
   getFiles,
   uploadFile,
   downloadFile,
