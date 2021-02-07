@@ -12,10 +12,14 @@ export const register = async (req, res) => {
   if (!validateRegister(req.body)) return res.sendStatus(400)
 
   try {
-    const { name, email, password, notes = [] } = req.body
+    const { name, email, password, notes = [], lists = [] } = req.body
+
+    notes.forEach(note => (note._id = ObjectID()))
+    lists.forEach(list => (list._id = ObjectID()))
+
     const {
       ops: [user]
-    } = await users.insertOne({ name, email, password: await bcrypt.hash(password, +BCRYPT_SALT_ROUNDS), notes })
+    } = await users.insertOne({ name, email, password: await bcrypt.hash(password, +BCRYPT_SALT_ROUNDS), notes, lists })
 
     console.log(`${user.name} registered`)
 
@@ -23,7 +27,7 @@ export const register = async (req, res) => {
 
     const token = generateAccessToken(res, user._id, refreshTokenID)
 
-    res.status(201).json({ name: user.name, notes: user.notes, token })
+    res.status(201).json({ name: user.name, notes: user.notes, lists: user.lists, token })
   } catch {
     res.status(409).json({ err: 'This email address is already registered, try login instead' })
   }
@@ -38,7 +42,7 @@ export const login = async (req, res) => {
 
     if (!user) return res.status(404).json({ err: 'No such user exists' })
 
-    const { _id: userID, password: hashedPassword, name, notes } = user
+    const { _id: userID, password: hashedPassword, name, notes = [], lists = [] } = user
     const match = await bcrypt.compare(password, hashedPassword)
 
     if (!match) return res.status(404).json({ err: 'Incorrect email or password' })
@@ -48,7 +52,7 @@ export const login = async (req, res) => {
     const token = generateAccessToken(res, userID, refreshTokenID)
     touchRefreshToken(refreshTokenID)
 
-    res.json({ name, notes, token })
+    res.json({ name, notes, lists, token })
   } catch (err) {
     console.error(err)
 
