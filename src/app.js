@@ -4,8 +4,15 @@ import WebSocket from 'ws'
 import { verifyToken } from './util.js'
 import { patchRequest, patchResponse, patchWebSocket } from './patch/index.js'
 import { register, login, renewToken, updateUser, changePassword, logout } from './controllers/users.js'
-import { getNotes, createNote, updateNote, deleteNote } from './controllers/notes.js'
-import { getLists, createList, updateList, deleteList } from './controllers/lists.js'
+import { getNotes, createNote, updatePin as updateNotePin, updateNote, deleteNote } from './controllers/notes.js'
+import {
+  getLists,
+  createList,
+  updatePin as updateListPin,
+  checkItem,
+  updateList,
+  deleteList
+} from './controllers/lists.js'
 import { getFiles, uploadFile, downloadFile, deleteFile } from './controllers/files.js'
 
 const { PING_INTERVAL = 30000 } = process.env
@@ -28,10 +35,13 @@ const messageTypes = {
   updateUser,
   getNotes,
   createNote,
+  updateNotePin,
   updateNote,
   deleteNote,
   getLists,
   createList,
+  updateListPin,
+  checkItem,
   updateList,
   deleteList,
   getFiles,

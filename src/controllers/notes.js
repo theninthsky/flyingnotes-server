@@ -57,6 +57,25 @@ export const createNote = async (ws, message) => {
   }
 }
 
+export const updatePin = async (ws, message) => {
+  const { messageID, userID, noteID, pinned } = message
+
+  try {
+    await users.findOneAndUpdate(
+      { _id: ObjectID(userID), 'notes._id': ObjectID(noteID) },
+      {
+        $set: {
+          'notes.$.pinned': pinned
+        }
+      }
+    )
+
+    ws.json({ messageID, status: 'SUCCESS' })
+  } catch ({ message }) {
+    ws.json({ messageID, status: 'FAIL', message })
+  }
+}
+
 export const updateNote = async (ws, message) => {
   const {
     messageID,

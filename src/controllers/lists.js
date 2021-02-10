@@ -53,6 +53,79 @@ export const createList = async (ws, message) => {
   }
 }
 
+export const updatePin = async (ws, message) => {
+  const { messageID, userID, listID, pinned } = message
+
+  try {
+    await users.findOneAndUpdate(
+      { _id: ObjectID(userID), 'lists._id': ObjectID(listID) },
+      {
+        $set: {
+          'lists.$.pinned': pinned
+        }
+      }
+    )
+
+    ws.json({ messageID, status: 'SUCCESS' })
+  } catch ({ message }) {
+    ws.json({ messageID, status: 'FAIL', message })
+  }
+}
+
+export const checkItem = async (ws, message) => {
+  const {
+    messageID,
+    userID,
+    listID,
+    index,
+    item: { value, checked }
+  } = message
+
+  try {
+    await users.findOneAndUpdate(
+      { _id: ObjectID(userID), 'lists._id': ObjectID(listID) },
+      {
+        $unset: {
+          [`lists.$.items.${index}`]: 1
+        }
+      }
+    )
+
+    await users.findOneAndUpdate(
+      { _id: ObjectID(userID), 'lists._id': ObjectID(listID) },
+      {
+        $pull: {
+          'lists.$.items': null
+        }
+      }
+    )
+
+    if (checked) {
+      await users.findOneAndUpdate(
+        { _id: ObjectID(userID), 'lists._id': ObjectID(listID) },
+        {
+          $push: {
+            'lists.$.items': { $each: [{ value, checked: !checked }], $position: 0 }
+          }
+        }
+      )
+    } else {
+      await users.findOneAndUpdate(
+        { _id: ObjectID(userID), 'lists._id': ObjectID(listID) },
+        {
+          $push: {
+            'lists.$.items': { value, checked: !checked }
+          }
+        }
+      )
+    }
+
+    ws.json({ messageID, status: 'SUCCESS' })
+  } catch ({ message }) {
+    ws.json({ messageID, status: 'FAIL', message })
+  }
+}
+
 export const updateList = async (ws, message) => {
   const {
     messageID,
