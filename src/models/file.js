@@ -1,30 +1,40 @@
-import schemaSafe from '@exodus/schemasafe'
+import AJV from 'ajv'
 
-const { validator } = schemaSafe
-const options = { isJSON: true, unmodifiedPrototypes: true }
+const ajv = new AJV.default({ allErrors: true })
 
-export const validateUploadFile = validator(
-  {
-    type: 'object',
-    properties: {
-      userID: { type: 'string' },
-      category: { type: 'string' },
-      name: { type: 'string' },
-      extension: { type: 'string' },
-      mimetype: { type: 'string' },
-      buffer: { type: 'object' },
-    },
+const fileSchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    extension: { type: 'string' },
+    base64: { type: 'string' }
   },
-  options,
-)
+  required: ['name', 'extension', 'base64']
+}
 
-export const validateDeleteFile = validator(
-  {
-    type: 'object',
-    properties: {
-      userID: { type: 'string' },
-      fileID: { type: 'string' },
-    },
+export const validateUploadFile = ajv.compile({
+  type: 'object',
+  properties: {
+    userID: { type: 'string' },
+    file: fileSchema
   },
-  options,
-)
+  required: ['userID', 'file']
+})
+
+export const validateDownloadFile = ajv.compile({
+  type: 'object',
+  properties: {
+    userID: { type: 'string' },
+    fileID: { type: 'string' }
+  },
+  required: ['userID', 'fileID']
+})
+
+export const validateDeleteFile = ajv.compile({
+  type: 'object',
+  properties: {
+    userID: { type: 'string' },
+    fileID: { type: 'string' }
+  },
+  required: ['userID', 'fileID']
+})

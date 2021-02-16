@@ -2,15 +2,15 @@ import mongodb from 'mongodb'
 
 import { files } from '../database.js'
 import { validateUserID } from '../models/user.js'
-import { validateDeleteFile } from '../models/file.js'
+import { validateUploadFile, validateDownloadFile, validateDeleteFile } from '../models/file.js'
 
 const { ObjectID } = mongodb
 
 export const getFiles = async (ws, message) => {
+  const { messageID, userID } = message
+
   try {
     if (!validateUserID(message)) throw Error('Invalid parameters')
-
-    const { messageID, userID } = message
 
     const allFiles = await files.find({ userID: ObjectID(userID) }, { projection: { userID: 0, base64: 0 } }).toArray()
 
@@ -26,8 +26,10 @@ export const uploadFile = async (ws, message) => {
   if (!base64) return ws.json({ error: 'No file' })
 
   try {
+    if (!validateUploadFile(message)) throw Error('Invalid parameters')
+
     const {
-      ops: [file],
+      ops: [file]
     } = await files.insertOne(
       {
         userID: ObjectID(userID),
@@ -35,8 +37,8 @@ export const uploadFile = async (ws, message) => {
         name,
         extension,
         base64,
-        date: new Date(),
-      },
+        date: new Date()
+      }
       /*{ projection: { userID: 0, base64: 0 } } has no effect */
     )
 
@@ -44,22 +46,22 @@ export const uploadFile = async (ws, message) => {
     delete file.base64
 
     ws.json({ messageID, file })
-  } catch (err) {
-    console.log(err)
-
-    ws.send()
+  } catch ({ message }) {
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }
 
-export const downloadFile = async (ws, { messageID, userID, fileID }) => {
+export const downloadFile = async (ws, message) => {
+  const { messageID, userID, fileID } = message
+
   try {
+    if (!validateDownloadFile(message)) throw Error('Invalid parameters')
+
     const { _id, name, extension, base64 } = await files.findOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
 
     ws.json({ messageID, fileID: _id, name, extension, base64 })
-  } catch (err) {
-    console.log(err)
-
-    ws.send()
+  } catch ({ message }) {
+    ws.json({ messageID, status: 'FAIL', message })
   }
 }
 

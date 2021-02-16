@@ -2,6 +2,13 @@ import mongodb from 'mongodb'
 
 import { users } from '../database.js'
 import { validateUserID } from '../models/user.js'
+import {
+  validateCreateList,
+  validateUpdatePin,
+  validateCheckItem,
+  validateUpdateList,
+  validateDeleteList
+} from '../models/list.js'
 
 const { ObjectID } = mongodb
 
@@ -27,6 +34,8 @@ export const createList = async (ws, message) => {
   } = message
 
   try {
+    if (!validateCreateList(message)) throw Error('Invalid parameters')
+
     const {
       value: {
         lists: [newList]
@@ -57,6 +66,8 @@ export const updatePin = async (ws, message) => {
   const { messageID, userID, listID, pinned } = message
 
   try {
+    if (!validateUpdatePin(message)) throw Error('Invalid parameters')
+
     await users.findOneAndUpdate(
       { _id: ObjectID(userID), 'lists._id': ObjectID(listID) },
       {
@@ -82,6 +93,8 @@ export const checkItem = async (ws, message) => {
   } = message
 
   try {
+    if (!validateCheckItem(message)) throw Error('Invalid parameters')
+
     await users.findOneAndUpdate(
       { _id: ObjectID(userID), 'lists._id': ObjectID(listID) },
       {
@@ -134,6 +147,8 @@ export const updateList = async (ws, message) => {
   } = message
 
   try {
+    if (!validateUpdateList(message)) throw Error('Invalid parameters')
+
     const {
       value: {
         lists: [updatedList]
@@ -164,6 +179,8 @@ export const deleteList = async (ws, message) => {
   const { messageID, userID, listID } = message
 
   try {
+    if (!validateDeleteList(message)) throw Error('Invalid parameters')
+
     await users.updateOne({ _id: ObjectID(userID) }, { $pull: { lists: { _id: ObjectID(listID) } } })
 
     ws.json({ messageID, status: 'SUCCESS', listID })

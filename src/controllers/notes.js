@@ -2,7 +2,7 @@ import mongodb from 'mongodb'
 
 import { users } from '../database.js'
 import { validateUserID } from '../models/user.js'
-import { validateCreateNote, validateUpdateNote, validateDeleteNote } from '../models/note.js'
+import { validateCreateNote, validateUpdatePin, validateUpdateNote, validateDeleteNote } from '../models/note.js'
 
 const { ObjectID } = mongodb
 
@@ -61,6 +61,8 @@ export const updatePin = async (ws, message) => {
   const { messageID, userID, noteID, pinned } = message
 
   try {
+    if (!validateUpdatePin(message)) throw Error('Invalid parameters')
+
     await users.findOneAndUpdate(
       { _id: ObjectID(userID), 'notes._id': ObjectID(noteID) },
       {

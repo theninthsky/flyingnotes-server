@@ -53,9 +53,7 @@ export const login = async (req, res) => {
     touchRefreshToken(refreshTokenID)
 
     res.json({ name, notes, lists, token })
-  } catch (err) {
-    console.error(err)
-
+  } catch {
     res.sendStatus(500)
   }
 }

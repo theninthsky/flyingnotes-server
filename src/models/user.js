@@ -1,65 +1,52 @@
-import schemaSafe from '@exodus/schemasafe'
+import AJV from 'ajv'
+import addFormats from 'ajv-formats'
 
-const { validator } = schemaSafe
-const options = { isJSON: true, unmodifiedPrototypes: true }
+const ajv = new AJV.default({ allErrors: true })
 
-export const validateRegister = validator(
-  {
-    type: 'object',
-    properties: {
-      name: { type: 'string' },
-      email: { type: 'string', format: 'email' },
-      password: { type: 'string', minLength: 8 },
-      notes: { type: 'array' }
-    },
-    required: ['name', 'email', 'password']
+addFormats(ajv)
+
+export const validateRegister = ajv.compile({
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    email: { type: 'string', format: 'email' },
+    password: { type: 'string', minLength: 8 },
+    notes: { type: 'array' }
   },
-  options
-)
+  required: ['name', 'email', 'password']
+})
 
-export const validateLogin = validator(
-  {
-    type: 'object',
-    properties: {
-      email: { type: 'string', format: 'email' },
-      password: { type: 'string', minLength: 8 }
-    },
-    required: ['email', 'password']
+export const validateLogin = ajv.compile({
+  type: 'object',
+  properties: {
+    email: { type: 'string', format: 'email' },
+    password: { type: 'string', minLength: 8 }
   },
-  options
-)
+  required: ['email', 'password']
+})
 
-export const validateUpdateUser = validator(
-  {
-    type: 'object',
-    properties: {
-      userID: { type: 'string' },
-      newName: { type: 'string' }
-    },
-    required: ['userID', 'newName']
+export const validateUpdateUser = ajv.compile({
+  type: 'object',
+  properties: {
+    userID: { type: 'string' },
+    newName: { type: 'string' }
   },
-  options
-)
+  required: ['userID', 'newName']
+})
 
-export const validateChangePassword = validator(
-  {
-    type: 'object',
-    properties: {
-      password: { type: 'string', minLength: 8 },
-      newPassword: { type: 'string', minLength: 8 }
-    },
-    required: ['password', 'newPassword']
+export const validateChangePassword = ajv.compile({
+  type: 'object',
+  properties: {
+    password: { type: 'string', minLength: 8 },
+    newPassword: { type: 'string', minLength: 8 }
   },
-  options
-)
+  required: ['password', 'newPassword']
+})
 
-export const validateUserID = validator(
-  {
-    type: 'object',
-    properties: {
-      userID: { type: 'string' }
-    },
-    required: ['userID']
+export const validateUserID = ajv.compile({
+  type: 'object',
+  properties: {
+    userID: { type: 'string' }
   },
-  options
-)
+  required: ['userID']
+})

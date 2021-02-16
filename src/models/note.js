@@ -1,51 +1,51 @@
-import schemaSafe from '@exodus/schemasafe'
+import AJV from 'ajv'
 
-const { validator } = schemaSafe
-const options = { isJSON: true, unmodifiedPrototypes: true }
+const ajv = new AJV.default({ allErrors: true })
 
 const noteSchema = {
   type: 'object',
   properties: {
+    pinned: { type: 'boolean' },
     category: { type: 'string' },
     title: { type: 'string' },
-    content: { type: 'string' },
-    date: { type: 'integer' },
+    content: { type: 'string' }
   },
-  required: ['content'],
+  required: ['pinned', 'content']
 }
 
-export const validateCreateNote = validator(
-  {
-    type: 'object',
-    properties: {
-      userID: { type: 'string' },
-      newNote: { type: 'object' },
-    },
-    required: ['userID', 'newNote'],
+export const validateCreateNote = ajv.compile({
+  type: 'object',
+  properties: {
+    userID: { type: 'string' },
+    newNote: noteSchema
   },
-  options,
-)
+  required: ['userID', 'newNote']
+})
 
-export const validateUpdateNote = validator(
-  {
-    type: 'object',
-    properties: {
-      userID: { type: 'string' },
-      updatedNote: { type: 'object' },
-    },
-    required: ['userID', 'updatedNote'],
+export const validateUpdatePin = ajv.compile({
+  type: 'object',
+  properties: {
+    userID: { type: 'string' },
+    noteID: { type: 'string' },
+    pinned: { type: 'boolean' }
   },
-  options,
-)
+  required: ['userID', 'noteID', 'pinned']
+})
 
-export const validateDeleteNote = validator(
-  {
-    type: 'object',
-    properties: {
-      userID: { type: 'string' },
-      noteID: { type: 'string' },
-    },
-    required: ['userID', 'noteID'],
+export const validateUpdateNote = ajv.compile({
+  type: 'object',
+  properties: {
+    userID: { type: 'string' },
+    updatedNote: noteSchema
   },
-  options,
-)
+  required: ['userID', 'updatedNote']
+})
+
+export const validateDeleteNote = ajv.compile({
+  type: 'object',
+  properties: {
+    userID: { type: 'string' },
+    noteID: { type: 'string' }
+  },
+  required: ['userID', 'noteID']
+})
