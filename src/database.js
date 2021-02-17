@@ -7,7 +7,7 @@ export let users
 export let tokens
 export let files
 
-export const connect = async () => {
+export const connectDB = async app => {
   if (NODE_ENV != 'test') {
     await client.connect()
 
@@ -18,5 +18,7 @@ export const connect = async () => {
     users = db.collection('users')
     tokens = db.collection('tokens')
     files = db.collection('files')
+
+    app.emit('ready')
   }
 }
