@@ -66,10 +66,10 @@ export const downloadFile = async (ws, message) => {
 }
 
 export const deleteFile = async (ws, message) => {
+  const { messageID, userID, fileID } = message
+
   try {
     if (!validateDeleteFile(message)) throw Error('Invalid parameters')
-
-    const { messageID, userID, fileID } = message
 
     await files.deleteOne({ _id: ObjectID(fileID), userID: ObjectID(userID) })
 

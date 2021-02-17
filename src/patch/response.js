@@ -21,7 +21,7 @@ export const patchResponse = res => {
   }
 
   res.send = body => {
-    const headers = { ...res.headers, ...corsHeaders }
+    const headers = { ...res.getHeaders(), ...corsHeaders }
 
     for (const header in headers) res.setHeader(header, headers[header])
 

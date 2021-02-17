@@ -9,16 +9,12 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "start": "npm-run-all --sequential build serve",
-    "dev": "npm-run-all --parallel build:watch serve:watch",
-    "build": "tsc",
-    "build:watch": "tsc -w",
-    "serve": "node -r dotenv/config dist/server",
-    "serve:watch": "nodemon -r dotenv/config dist/server",
+    "start": "node -r dotenv/config src/server",
+    "dev": "npm-run-all --parallel serve:watch",
+    "serve:watch": "nodemon -r dotenv/config src/server",
     "lint": "eslint .",
     "pretest": "npm run lint",
-    "test": "cross-env NODE_ENV=test mocha -r dotenv/config",
-    "publish": "tsc && npm run test && git push"
+    "test": "cross-env NODE_ENV=test mocha -r dotenv/config"
   },
   "dependencies": {
     "ajv": "^7.1.0",
@@ -31,8 +27,6 @@
     "ws": "^7.4.3"
   },
   "devDependencies": {
-    "@types/node": "^14.14.28",
-    "@types/ws": "^7.4.0",
     "babel-eslint": "^10.1.0",
     "chai": "^4.3.0",
     "chai-http": "^4.3.0",
@@ -42,7 +36,6 @@
     "mocha": "^7.2.0",
     "mongodb-memory-server": "^6.9.3",
     "nodemon": "^2.0.7",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^4.1.5"
+    "npm-run-all": "^4.1.5"
   }
 }
