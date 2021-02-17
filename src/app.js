@@ -3,52 +3,9 @@ import WebSocket from 'ws'
 
 import { verifyToken } from './util.js'
 import { patchRequest, patchResponse, patchWebSocket } from './patch/index.js'
-import { register, login, renewToken, updateUser, changePassword, logout } from './controllers/users.js'
-import { getNotes, createNote, updatePin as updateNotePin, updateNote, deleteNote } from './controllers/notes.js'
-import {
-  getLists,
-  createList,
-  updatePin as updateListPin,
-  checkItem,
-  updateList,
-  deleteList
-} from './controllers/lists.js'
-import { getFiles, uploadFile, downloadFile, deleteFile } from './controllers/files.js'
+import { restControllers, wsControllers } from './controllers/index.js'
 
 const { PING_INTERVAL = 30000 } = process.env
-
-const publicRoutes = {
-  GET: {
-    '/renew-token': renewToken
-  },
-  POST: {
-    '/register': register,
-    '/login': login,
-    '/logout': logout
-  },
-  PUT: {
-    '/change-password': changePassword
-  }
-}
-
-const messageTypes = {
-  updateUser,
-  getNotes,
-  createNote,
-  updateNotePin,
-  updateNote,
-  deleteNote,
-  getLists,
-  createList,
-  updateListPin,
-  checkItem,
-  updateList,
-  deleteList,
-  getFiles,
-  uploadFile,
-  downloadFile,
-  deleteFile
-}
 
 const server = createServer(async (req, res) => {
   patchResponse(res)
@@ -58,7 +15,7 @@ const server = createServer(async (req, res) => {
   await patchRequest(req)
 
   try {
-    publicRoutes[req.method][req.url](req, res)
+    restControllers[req.method][req.url](req, res)
   } catch {
     res.sendStatus(404)
   }
@@ -83,7 +40,7 @@ wss.on('connection', ws => {
   ws.on('message', data => {
     const { type, ...message } = JSON.parse(data)
 
-    messageTypes[type](ws, message)
+    wsControllers[type](ws, message)
   })
 
   ws.isAlive = true
@@ -92,7 +49,7 @@ wss.on('connection', ws => {
     this.isAlive = true
   })
 
-  const intervalID = setInterval(() => {
+  const pingInterval = setInterval(() => {
     wss.clients.forEach(ws => {
       if (!ws.isAlive) return ws.terminate()
 
@@ -103,7 +60,7 @@ wss.on('connection', ws => {
 
   ws.on('close', () => {
     console.log('A WebSocket disconnected!')
-    clearInterval(intervalID)
+    clearInterval(pingInterval)
   })
 })
 

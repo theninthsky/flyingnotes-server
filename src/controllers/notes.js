@@ -57,7 +57,7 @@ export const createNote = async (ws, message) => {
   }
 }
 
-export const updatePin = async (ws, message) => {
+export const updateNotePin = async (ws, message) => {
   const { messageID, userID, noteID, pinned } = message
 
   try {

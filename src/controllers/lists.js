@@ -62,7 +62,7 @@ export const createList = async (ws, message) => {
   }
 }
 
-export const updatePin = async (ws, message) => {
+export const updateListPin = async (ws, message) => {
   const { messageID, userID, listID, pinned } = message
 
   try {
