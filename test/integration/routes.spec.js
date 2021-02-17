@@ -48,7 +48,7 @@ describe('User Routes', function () {
     it('should not allow an incorrect email or password', async function () {
       const res = await agent.post('/login').send({
         ...user,
-        password: 'incorrect_password',
+        password: 'incorrect_password'
       })
 
       expect(res.text).to.equal('Incorrect email or password')
@@ -58,7 +58,7 @@ describe('User Routes', function () {
   describe('Update', function () {
     it('should update the name and password', async function () {
       const res = await agent.put('/update').send({
-        name: 'Updated Test User',
+        name: 'Updated Test User'
       })
 
       expect(res).to.have.status(200)
@@ -69,7 +69,7 @@ describe('User Routes', function () {
     it('should update the name and password', async function () {
       const res = await agent.put('/register').send({
         password: user.password,
-        newPassword: '987654321',
+        newPassword: '987654321'
       })
 
       expect(res).to.have.status(200)
@@ -80,7 +80,7 @@ describe('User Routes', function () {
     it('should not allow an incorrect password', async function () {
       const res = await agent.put('/register').send({
         password: 'incorrectpassword',
-        newPassword: '198237645',
+        newPassword: '198237645'
       })
 
       expect(res).to.have.status(404)
@@ -164,7 +164,7 @@ describe('Note Routes', function () {
 
     it('should return a 404 status code for an invalid note ID', async function () {
       const res = await agent.delete('/notes').send({
-        noteID: 'invalid',
+        noteID: 'invalid'
       })
 
       expect(res).to.have.status(404)
