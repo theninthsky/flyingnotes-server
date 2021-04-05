@@ -18,24 +18,24 @@
     "test": "cross-env NODE_ENV=test mocha -r dotenv/config"
   },
   "dependencies": {
-    "ajv": "^7.1.0",
-    "ajv-formats": "^1.5.1",
-    "bcrypt": "^5.0.0",
+    "ajv": "^8.0.5",
+    "ajv-formats": "^2.0.2",
+    "bcrypt": "^5.0.1",
     "dotenv": "^8.2.0",
     "fast-json-stable-stringify": "^2.1.0",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^3.6.4",
-    "ws": "^7.4.3"
+    "mongodb": "^3.6.5",
+    "ws": "^7.4.4"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "chai": "^4.3.0",
+    "chai": "^4.3.4",
     "chai-http": "^4.3.0",
     "cross-env": "^7.0.3",
-    "eslint": "^7.20.0",
+    "eslint": "^7.23.0",
     "eslint-watch": "^7.0.0",
-    "mocha": "^7.2.0",
-    "mongodb-memory-server": "^6.9.3",
+    "mocha": "^8.3.2",
+    "mongodb-memory-server": "^6.9.6",
     "nodemon": "^2.0.7",
     "npm-run-all": "^4.1.5"
   }
