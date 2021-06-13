@@ -13,7 +13,6 @@ const {
 const { ObjectID } = mongodb
 
 const COOKIE_EXPIRES_IN = REFRESH_TOKEN_EXPIRES_IN_MONTHS * 30 * 24 * 60 * 60
-const isProduction = NODE_ENV == 'production'
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': CLIENT_URL,
@@ -76,10 +75,7 @@ export const generateAccessToken = (res, userID, refreshTokenID) => {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN
   })
 
-  res.setHeader(
-    'Set-Cookie',
-    `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None${isProduction ? '; Secure' : ''}`
-  )
+  res.setHeader('Set-Cookie', `Bearer=${accessToken}; Max-Age=${COOKIE_EXPIRES_IN}; HttpOnly; SameSite=None; Secure`)
 
   return accessToken
 }
